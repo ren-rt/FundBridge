@@ -1,1 +1,8 @@
-backend/.env
+node_modules/
+.env
+.env.backup
+.env.local
+dist/
+build/
+*.log
+backend/src/config/firebase-service-account.json
