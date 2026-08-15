@@ -14,3 +14,6 @@ app.use('/api/founders', foundersRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const investorsRoutes = require('./modules/investors/investors.routes');
+app.use('/api/investors', investorsRoutes);
