@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
@@ -11,25 +12,42 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
-  const [role, setRole] = useState(null)
+  const [appUser, setAppUser] = useState(null)
   const [appToken, setAppToken] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  // Used only when creating a new account.
+  const pendingRoleRef = useRef(null)
+
+  // Used so login() can wait for the backend authentication
+  // to finish before returning the application user.
+  const backendAuthPromiseRef = useRef(null)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
 
-      if (firebaseUser) {
-        // Temporary frontend role storage.
-        // Backend should eventually provide/verify the real role.
-        const savedRole = localStorage.getItem(
-          `fundbridge_role_${firebaseUser.uid}`
-        )
+      if (!firebaseUser) {
+        setAppUser(null)
+        setAppToken(null)
+        pendingRoleRef.current = null
+        backendAuthPromiseRef.current = null
+        setLoading(false)
+        return
+      }
 
-        setRole(savedRole || null)
-
+      const authenticateWithBackend = async () => {
         try {
           const idToken = await firebaseUser.getIdToken()
+
+          const body = {
+            idToken,
+          }
+
+          // During signup, send the selected role.
+          if (pendingRoleRef.current) {
+            body.role = pendingRoleRef.current
+          }
 
           const res = await fetch(
             'http://localhost:3000/api/auth/login',
@@ -38,33 +56,50 @@ export function AuthProvider({ children }) {
               headers: {
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ idToken }),
+              body: JSON.stringify(body),
             }
           )
 
-          if (res.ok) {
-            const data = await res.json()
+          const data = await res.json().catch(() => null)
 
-            setAppToken(data.token)
-            localStorage.setItem('appToken', data.token)
-          } else {
-            console.log(
-              'Backend token exchange failed — endpoint may not be ready yet'
+          if (!res.ok) {
+            throw new Error(
+              data?.message ||
+              data?.error ||
+              'Backend authentication failed'
             )
           }
+
+          const backendUser = data?.user || null
+          const backendToken = data?.token || null
+
+          setAppToken(backendToken)
+          setAppUser(backendUser)
+
+          return backendUser
         } catch (err) {
-          console.log(
+          console.error(
             'Backend token exchange failed:',
             err.message
           )
+
+          setAppUser(null)
+          setAppToken(null)
+
+          throw err
+        } finally {
+          pendingRoleRef.current = null
+          setLoading(false)
         }
-      } else {
-        setRole(null)
-        setAppToken(null)
-        localStorage.removeItem('appToken')
       }
 
-      setLoading(false)
+      backendAuthPromiseRef.current = authenticateWithBackend()
+
+      try {
+        await backendAuthPromiseRef.current
+      } catch {
+        // Error already handled above.
+      }
     })
 
     return unsubscribe
@@ -77,45 +112,52 @@ export function AuthProvider({ children }) {
       password
     )
 
-    const firebaseUser = credential.user
+    // onAuthStateChanged will now exchange the Firebase
+    // account for the application user.
+    //
+    // Wait until that exchange has completed before Login.jsx
+    // tries to read the role.
+    if (backendAuthPromiseRef.current) {
+      await backendAuthPromiseRef.current
+    }
 
-    const savedRole = localStorage.getItem(
-      `fundbridge_role_${firebaseUser.uid}`
-    )
-
-    setRole(savedRole || null)
-
-    return firebaseUser
+    return {
+      firebaseUser: credential.user,
+      appUser,
+    }
   }
 
   async function signup(email, password, selectedRole) {
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password
-    )
+    pendingRoleRef.current = selectedRole
 
-    const firebaseUser = credential.user
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      )
 
-    // Temporary role storage for the frontend.
-    localStorage.setItem(
-      `fundbridge_role_${firebaseUser.uid}`,
-      selectedRole
-    )
+      // Signup's role is handled by the backend exchange.
+      if (backendAuthPromiseRef.current) {
+        await backendAuthPromiseRef.current
+      }
 
-    setRole(selectedRole)
-
-    return firebaseUser
+      return credential.user
+    } catch (err) {
+      pendingRoleRef.current = null
+      throw err
+    }
   }
 
   async function logout() {
     await signOut(auth)
 
     setUser(null)
-    setRole(null)
+    setAppUser(null)
     setAppToken(null)
 
-    localStorage.removeItem('appToken')
+    pendingRoleRef.current = null
+    backendAuthPromiseRef.current = null
   }
 
   async function getToken() {
@@ -126,7 +168,8 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user,
-        role,
+        appUser,
+        appToken,
         loading,
         login,
         signup,
@@ -142,3 +185,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext)
 }
+

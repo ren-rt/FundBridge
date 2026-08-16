@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
@@ -7,18 +8,21 @@ import Button from '../components/ui/Button'
 function InvestorProfile() {
   const navigate = useNavigate()
 
+  const { getToken, appUser } = useAuth()
+
   const [form, setForm] = useState({
-    name: '',
+    firm_name: '',
+    primary_domain: '',
+    secondary_domains: '',
+    stage_pref: '',
+    ticket_min: '',
+    ticket_max: '',
     location: '',
-    bio: '',
-    organization: '',
-    interests: '',
-    experience: '',
-    linkedin: '',
-    photo: '',
+    investment_thesis: '',
   })
 
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(field) {
     return (e) => {
@@ -26,51 +30,96 @@ function InvestorProfile() {
         ...form,
         [field]: e.target.value,
       })
+
       setSaved(false)
+      setError('')
     }
   }
 
-  function handlePhotoChange(e) {
-    const file = e.target.files[0]
-
-    if (!file) return
-
-    const reader = new FileReader()
-
-    reader.onload = () => {
-      setForm({
-        ...form,
-        photo: reader.result,
-      })
-      setSaved(false)
-    }
-
-    reader.readAsDataURL(file)
-  }
-
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
 
-    localStorage.setItem(
-      'investorProfile',
-      JSON.stringify(form)
-    )
+    setSaved(false)
+    setError('')
 
-    localStorage.setItem(
-      'investorProfileComplete',
-      'true'
-    )
+    try {
+      const token = await getToken()
 
-    setSaved(true)
+      if (!token) {
+        throw new Error(
+          'Authentication token not available. Please log in again.'
+        )
+      }
+
+      if (!appUser?.id) {
+        throw new Error(
+          'User information not available. Please log in again.'
+        )
+      }
+
+      const res = await fetch(
+        'http://localhost:3000/api/investors',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            user_id: appUser.id,
+            firm_name: form.firm_name,
+            primary_domain: form.primary_domain,
+            secondary_domains: form.secondary_domains,
+            stage_pref: form.stage_pref,
+            ticket_min: form.ticket_min,
+            ticket_max: form.ticket_max,
+            location: form.location,
+            investment_thesis: form.investment_thesis,
+          }),
+        }
+      )
+
+      if (!res.ok) {
+        const message = await res.text()
+        throw new Error(
+          message || 'Failed to save investor profile'
+        )
+      }
+
+      // Keep frontend completion behaviour
+      localStorage.setItem(
+        'investorProfile',
+        JSON.stringify(form)
+      )
+
+      localStorage.setItem(
+        'investorProfileComplete',
+        'true'
+      )
+
+      setSaved(true)
+
+    } catch (err) {
+      console.error(
+        'Investor profile save error:',
+        err
+      )
+
+      setError(
+        err.message ||
+        'Could not save investor profile'
+      )
+    }
   }
 
   const requiredFields = [
-    form.name,
+    form.firm_name,
+    form.primary_domain,
+    form.stage_pref,
+    form.ticket_min,
+    form.ticket_max,
     form.location,
-    form.bio,
-    form.organization,
-    form.interests,
-    form.experience,
+    form.investment_thesis,
   ]
 
   const completedFields = requiredFields.filter(
@@ -90,58 +139,9 @@ function InvestorProfile() {
         </h1>
 
         <p className="text-navy-400 mt-2">
-          Build your investor identity and help founders understand who you are.
+          Build your investor profile and help founders understand what you are looking for.
         </p>
       </div>
-
-      <Card className="mb-6">
-
-        <div className="flex items-center gap-5">
-
-          {form.photo ? (
-            <img
-              src={form.photo}
-              alt="Profile"
-              className="w-24 h-24 rounded-full object-cover border-2 border-gold-500"
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full bg-navy-700 border-2 border-navy-600 flex items-center justify-center">
-              <span className="text-3xl text-gold-300">
-                {form.name
-                  ? form.name.charAt(0).toUpperCase()
-                  : 'I'}
-              </span>
-            </div>
-          )}
-
-          <div>
-            <h2 className="text-lg font-semibold text-navy-100">
-              Profile Photo
-            </h2>
-
-            <p className="text-sm text-navy-400 mt-1 mb-3">
-              Add a professional photo to your investor profile.
-            </p>
-
-            <label className="inline-block cursor-pointer">
-
-              <span className="inline-block bg-navy-800 border border-navy-700 text-gold-300 px-4 py-2 rounded-lg text-sm hover:border-gold-500 transition-colors">
-                Choose Photo
-              </span>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className="hidden"
-              />
-
-            </label>
-          </div>
-
-        </div>
-
-      </Card>
 
       <Card>
 
@@ -152,21 +152,70 @@ function InvestorProfile() {
 
           <div>
             <h2 className="text-lg font-semibold text-navy-100">
-              Personal Information
+              Investment Information
             </h2>
 
             <p className="text-sm text-navy-400 mt-1">
-              Tell founders who you are and what you are looking for.
+              Tell founders about your investment focus and preferences.
             </p>
           </div>
 
           <Input
-            label="Full name"
-            placeholder="Your full name"
-            value={form.name}
-            onChange={handleChange('name')}
+            label="Firm / Individual Name"
+            placeholder="Acme Ventures"
+            value={form.firm_name}
+            onChange={handleChange('firm_name')}
             required
           />
+
+          <div className="grid grid-cols-2 gap-4">
+
+            <Input
+              label="Primary Domain"
+              placeholder="Fintech"
+              value={form.primary_domain}
+              onChange={handleChange('primary_domain')}
+              required
+            />
+
+            <Input
+              label="Secondary Domains"
+              placeholder="Agritech, AI, SaaS"
+              value={form.secondary_domains}
+              onChange={handleChange('secondary_domains')}
+            />
+
+          </div>
+
+          <Input
+            label="Stage Preference"
+            placeholder="Pre-seed, Seed"
+            value={form.stage_pref}
+            onChange={handleChange('stage_pref')}
+            required
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+
+            <Input
+              label="Minimum Ticket Size (USD)"
+              type="number"
+              placeholder="10000"
+              value={form.ticket_min}
+              onChange={handleChange('ticket_min')}
+              required
+            />
+
+            <Input
+              label="Maximum Ticket Size (USD)"
+              type="number"
+              placeholder="100000"
+              value={form.ticket_max}
+              onChange={handleChange('ticket_max')}
+              required
+            />
+
+          </div>
 
           <Input
             label="Location"
@@ -176,71 +225,28 @@ function InvestorProfile() {
             required
           />
 
-          <Input
-            label="Organization / Firm"
-            placeholder="Your company, fund or organization"
-            value={form.organization}
-            onChange={handleChange('organization')}
-            required
-          />
-
           <div className="flex flex-col gap-1.5 text-left">
 
             <label className="text-sm font-medium text-navy-100">
-              About you
+              Investment Thesis
             </label>
 
             <textarea
               rows={5}
-              placeholder="Tell founders about yourself, your investment background and your experience."
-              value={form.bio}
-              onChange={handleChange('bio')}
+              placeholder="Describe the types of founders, companies and opportunities you are interested in investing in."
+              value={form.investment_thesis}
+              onChange={handleChange('investment_thesis')}
               required
               className="bg-navy-950/60 border border-navy-700 rounded-lg px-4 py-2.5 text-navy-100 placeholder-navy-400 focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 resize-none"
             />
 
           </div>
 
-          <div className="flex flex-col gap-1.5 text-left">
-
-            <label className="text-sm font-medium text-navy-100">
-              Investment interests
-            </label>
-
-            <textarea
-              rows={4}
-              placeholder="Fintech, Agritech, AI, Climate Tech, SaaS..."
-              value={form.interests}
-              onChange={handleChange('interests')}
-              required
-              className="bg-navy-950/60 border border-navy-700 rounded-lg px-4 py-2.5 text-navy-100 placeholder-navy-400 focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 resize-none"
-            />
-
-          </div>
-
-          <div className="flex flex-col gap-1.5 text-left">
-
-            <label className="text-sm font-medium text-navy-100">
-              Investment experience
-            </label>
-
-            <textarea
-              rows={4}
-              placeholder="Describe your investment experience, previous investments or relevant professional background."
-              value={form.experience}
-              onChange={handleChange('experience')}
-              required
-              className="bg-navy-950/60 border border-navy-700 rounded-lg px-4 py-2.5 text-navy-100 placeholder-navy-400 focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 resize-none"
-            />
-
-          </div>
-
-          <Input
-            label="LinkedIn profile"
-            placeholder="https://linkedin.com/in/yourname"
-            value={form.linkedin}
-            onChange={handleChange('linkedin')}
-          />
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
           <div className="border-t border-navy-800 pt-5">
 
@@ -277,13 +283,13 @@ function InvestorProfile() {
 
           <div className="flex justify-between items-center pt-2">
 
-           <Button
-  type="button"
-  variant="secondary"
-  onClick={() => navigate('/investor-home')}
->
-  Back
-</Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate('/investor-home')}
+            >
+              Back
+            </Button>
 
             <Button type="submit">
               Save Profile

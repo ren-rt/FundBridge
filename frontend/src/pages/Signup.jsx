@@ -22,21 +22,17 @@ function Signup() {
     setLoading(true)
 
     try {
-      // Create Firebase account
-      await signup(email, password)
+      // Pass selected role to AuthContext
+      await signup(email, password, role)
 
-      // Save the selected application role
-      localStorage.setItem('fundbridgeRole', role)
+      // Role is now handled by the backend.
+      // No localStorage role is needed.
 
-      console.log('New account role:', role)
-
-      // Send user to correct dashboard
       if (role === 'FOUNDER') {
         navigate('/founder-home', { replace: true })
       } else {
         navigate('/investor-home', { replace: true })
       }
-
     } catch (err) {
       console.error('Firebase signup error:', err)
 
@@ -47,9 +43,12 @@ function Signup() {
       } else if (err.code === 'auth/invalid-email') {
         setError('Please enter a valid email address.')
       } else {
-        setError(err.code || err.message || 'Could not create account')
+        setError(
+          err.code ||
+          err.message ||
+          'Could not create account'
+        )
       }
-
     } finally {
       setLoading(false)
     }
@@ -93,7 +92,6 @@ function Signup() {
               required
             />
 
-            {/* ROLE */}
             <div className="flex flex-col gap-1.5 text-left">
 
               <label className="text-sm font-medium text-navy-100">

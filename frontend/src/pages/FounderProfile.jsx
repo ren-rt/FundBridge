@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 
 function FounderProfile() {
   const navigate = useNavigate()
+
+  const { getToken, appUser } = useAuth()
 
   const [form, setForm] = useState({
     name: '',
@@ -18,6 +21,7 @@ function FounderProfile() {
   })
 
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
 
   function handleChange(field) {
     return (e) => {
@@ -26,6 +30,7 @@ function FounderProfile() {
         [field]: e.target.value,
       })
       setSaved(false)
+      setError('')
     }
   }
 
@@ -47,20 +52,58 @@ function FounderProfile() {
     reader.readAsDataURL(file)
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
 
-    localStorage.setItem(
-      'founderProfile',
-      JSON.stringify(form)
-    )
+    setError('')
 
-    localStorage.setItem(
-      'founderProfileComplete',
-      'true'
-    )
+    try {
+      const token = await getToken()
 
-    setSaved(true)
+      if (!token) {
+        throw new Error('Authentication token not available. Please log in again.')
+      }
+
+      const res = await fetch('http://localhost:3000/api/founders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+  user_id: appUser?.id,
+  company: form.name,
+  industry: form.skills,
+  stage: form.experience,
+  country: form.location,
+  region: form.location,
+  funding_amount: '',
+  description: form.bio,
+}),
+      })
+
+      if (!res.ok) {
+        const message = await res.text()
+        throw new Error(message || 'Failed to save founder profile')
+      }
+
+      // Keep the existing frontend completion behaviour
+      localStorage.setItem(
+        'founderProfile',
+        JSON.stringify(form)
+      )
+
+      localStorage.setItem(
+        'founderProfileComplete',
+        'true'
+      )
+
+      setSaved(true)
+
+    } catch (err) {
+      console.error('Founder profile save error:', err)
+      setError(err.message || 'Could not save founder profile')
+    }
   }
 
   const requiredFields = [
@@ -220,6 +263,12 @@ function FounderProfile() {
             value={form.linkedin}
             onChange={handleChange('linkedin')}
           />
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
           <div className="border-t border-navy-800 pt-5">
 

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import Button from './ui/Button'
 
 function Layout() {
-  const { user, logout } = useAuth()
+  const { user, appUser, logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-navy-950 text-navy-100 flex">

@@ -1,3 +1,4 @@
+
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -21,11 +22,11 @@ function Login() {
     setLoading(true)
 
     try {
-      await login(email, password)
+      const result = await login(email, password)
 
-      // Get the role saved when this account was created
-      const role = localStorage.getItem('fundbridgeRole')
+      const role = result?.appUser?.role
 
+      console.log('Logged in app user:', result?.appUser)
       console.log('Logged in role:', role)
 
       if (role === 'FOUNDER') {
@@ -33,9 +34,8 @@ function Login() {
       } else if (role === 'INVESTOR') {
         navigate('/investor-home', { replace: true })
       } else {
-        // No role saved
         setError(
-          'Your account role could not be found. Please sign up again or select your role.'
+          'Your account role could not be found. Please try logging in again.'
         )
       }
 
@@ -128,3 +128,4 @@ function Login() {
 }
 
 export default Login
+
