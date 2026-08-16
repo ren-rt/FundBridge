@@ -4,7 +4,7 @@ const router = express.Router();
 
 const controller = require('./startupSchool.controller');
 const { courseIdValidator, createCourseValidator } = require('./startupSchool.validator');
-const verifyFirebaseToken = require('../../middleware/auth.middleware');
+const verifyJWT = require('../../middleware/jwt.middleware');
 const attachDbUser = require('../../middleware/attachDbUser');
 const requireAdmin = require('../../middleware/requireAdmin');
 

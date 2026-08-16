@@ -4,7 +4,7 @@ const router = express.Router();
 
 const controller = require('./adminVerification.controller');
 const { profileIdValidator, rejectReasonValidator } = require('./adminVerification.validator');
-const verifyFirebaseToken = require('../../middleware/auth.middleware');
+const verifyJWT = require('../../middleware/jwt.middleware');
 const requireAdmin = require('../../middleware/requireAdmin');
 
 // Order matters: verify identity first, then check role.
