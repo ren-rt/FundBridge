@@ -11,7 +11,7 @@ const {
 const verifyJWT = require('../../middleware/jwt.middleware');
 const attachDbUser = require('../../middleware/attachDbUser');
 
-router.use(verifyFirebaseToken, attachDbUser);
+router.use(verifyJWT, attachDbUser);
 
 router.post('/', createPitchValidator, controller.create);
 router.get('/', controller.listAll);
