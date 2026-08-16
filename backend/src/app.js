@@ -2,13 +2,16 @@ const express = require('express');
 require('dotenv').config();
 
 const app = express();
+
 app.use(express.json());
 app.use(require('cors')());
 
+// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Routes
 const foundersRoutes = require('./modules/founders/founders.routes');
 app.use('/api/founders', foundersRoutes);
 
@@ -24,9 +27,6 @@ app.use('/api/pitches', pitchesRoutes);
 const feedRoutes = require('./modules/feed/feed.routes');
 app.use('/api/feed', feedRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
 const investorsRoutes = require('./modules/investors/investors.routes');
 app.use('/api/investors', investorsRoutes);
 
@@ -35,3 +35,10 @@ app.use('/api/auth', authRoutes);
 
 const matchesRoutes = require('./modules/matches/matches.routes');
 app.use('/api/matches', matchesRoutes);
+
+// Start server
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
