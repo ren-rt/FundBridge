@@ -8,7 +8,7 @@ const {
   createPitchValidator,
   updatePitchValidator,
 } = require('./pitches.validator');
-const verifyFirebaseToken = require('../../middleware/auth.middleware');
+const verifyJWT = require('../../middleware/jwt.middleware');
 const attachDbUser = require('../../middleware/attachDbUser');
 
 router.use(verifyFirebaseToken, attachDbUser);
