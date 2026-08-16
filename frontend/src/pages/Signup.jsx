@@ -1,45 +1,55 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
 function Signup() {
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('FOUNDER')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  const { signup } = useAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e) {
     e.preventDefault()
+
     setError('')
     setLoading(true)
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          role,
-        }),
-      })
+      // Create Firebase account
+      await signup(email, password)
 
-      if (!res.ok) {
-        throw new Error('Could not create account')
+      // Save the selected application role
+      localStorage.setItem('fundbridgeRole', role)
+
+      console.log('New account role:', role)
+
+      // Send user to correct dashboard
+      if (role === 'FOUNDER') {
+        navigate('/founder-home', { replace: true })
+      } else {
+        navigate('/investor-home', { replace: true })
       }
 
-      navigate('/login')
     } catch (err) {
-      setError(err.message)
+      console.error('Firebase signup error:', err)
+
+      if (err.code === 'auth/email-already-in-use') {
+        setError('That email is already registered. Please log in.')
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password should be at least 6 characters.')
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.')
+      } else {
+        setError(err.code || err.message || 'Could not create account')
+      }
+
     } finally {
       setLoading(false)
     }
@@ -48,6 +58,7 @@ function Signup() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-sm">
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gold-500 tracking-tight">
             Create your account
@@ -59,14 +70,10 @@ function Signup() {
         </div>
 
         <Card>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <Input
-              label="Full name"
-              placeholder="Jane Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4"
+          >
 
             <Input
               type="email"
@@ -86,12 +93,15 @@ function Signup() {
               required
             />
 
+            {/* ROLE */}
             <div className="flex flex-col gap-1.5 text-left">
+
               <label className="text-sm font-medium text-navy-100">
                 I am a
               </label>
 
               <div className="flex gap-2">
+
                 <button
                   type="button"
                   onClick={() => setRole('FOUNDER')}
@@ -115,6 +125,7 @@ function Signup() {
                 >
                   Investor
                 </button>
+
               </div>
             </div>
 
@@ -131,11 +142,13 @@ function Signup() {
             >
               {loading ? 'Creating account...' : 'Sign Up'}
             </Button>
+
           </form>
         </Card>
 
         <p className="text-center text-navy-400 text-sm mt-6">
           Already have an account?{' '}
+
           <Link
             to="/login"
             className="text-gold-300 hover:text-gold-100"
@@ -143,6 +156,7 @@ function Signup() {
             Log in
           </Link>
         </p>
+
       </div>
     </div>
   )

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import Button from './ui/Button'
 
 function Layout() {
-  const { token, logout } = useAuth()
+  const { user, logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-navy-950 text-navy-100 flex">
@@ -20,23 +20,25 @@ function Layout() {
         </Link>
 
         <Link
+          to="/feed"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          Feed
+        </Link>
+
+        <Link
           to="/profile/founder"
           className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >
           Founder Profile
         </Link>
+
         <Link
-            to="/profile/investor"
-            className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+          to="/profile/investor"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >
-            Investor Profile
+          Investor Profile
         </Link>
-        <Link
-        to="/admin"
-    className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
-    >
-    Admin
-    </Link>
       </aside>
 
       <div className="flex-1 flex flex-col">
@@ -45,7 +47,7 @@ function Layout() {
             Dashboard
           </span>
 
-          {token ? (
+          {user ? (
             <Button variant="ghost" onClick={logout}>
               Log Out
             </Button>

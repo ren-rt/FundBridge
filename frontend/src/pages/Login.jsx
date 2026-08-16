@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -17,28 +16,41 @@ function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+
     setError('')
     setLoading(true)
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      await login(email, password)
 
-      if (!res.ok) {
-        throw new Error('Invalid email or password')
+      // Get the role saved when this account was created
+      const role = localStorage.getItem('fundbridgeRole')
+
+      console.log('Logged in role:', role)
+
+      if (role === 'FOUNDER') {
+        navigate('/founder-home', { replace: true })
+      } else if (role === 'INVESTOR') {
+        navigate('/investor-home', { replace: true })
+      } else {
+        // No role saved
+        setError(
+          'Your account role could not be found. Please sign up again or select your role.'
+        )
       }
 
-      const data = await res.json()
-
-      login(data.token, data.user)
-      navigate('/')
     } catch (err) {
-      setError(err.message)
+      console.error('Firebase login error:', err)
+
+      if (
+        err.code === 'auth/invalid-credential' ||
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/user-not-found'
+      ) {
+        setError('Invalid email or password')
+      } else {
+        setError(err.message || 'Could not log in')
+      }
     } finally {
       setLoading(false)
     }
@@ -47,6 +59,7 @@ function Login() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
       <div className="w-full max-w-sm">
+
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gold-500 tracking-tight">
             Welcome back
@@ -58,7 +71,11 @@ function Login() {
         </div>
 
         <Card>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-4"
+          >
+
             <Input
               type="email"
               label="Email"
@@ -90,11 +107,13 @@ function Login() {
             >
               {loading ? 'Logging in...' : 'Log In'}
             </Button>
+
           </form>
         </Card>
 
         <p className="text-center text-navy-400 text-sm mt-6">
           Don't have an account?{' '}
+
           <Link
             to="/signup"
             className="text-gold-300 hover:text-gold-100"
@@ -102,10 +121,10 @@ function Login() {
             Sign up
           </Link>
         </p>
+
       </div>
     </div>
   )
 }
 
 export default Login
-
