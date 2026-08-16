@@ -24,9 +24,6 @@ app.use('/api/pitches', pitchesRoutes);
 const feedRoutes = require('./modules/feed/feed.routes');
 app.use('/api/feed', feedRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
 const investorsRoutes = require('./modules/investors/investors.routes');
 app.use('/api/investors', investorsRoutes);
 
@@ -35,3 +32,6 @@ app.use('/api/auth', authRoutes);
 
 const matchesRoutes = require('./modules/matches/matches.routes');
 app.use('/api/matches', matchesRoutes);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
