@@ -4,7 +4,7 @@ const router = express.Router();
 
 const controller = require('./feed.controller');
 const { feedQueryValidator } = require('./feed.validator');
-const verifyJWT = require('../../middleware/auth.middleware');
+const verifyJWT = require('../../middleware/jwt.middleware');
 const attachDbUser = require('../../middleware/attachDbUser');
 
 router.use(verifyJWT, attachDbUser);
