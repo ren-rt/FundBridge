@@ -6,6 +6,7 @@ const MIGRATION_ORDER = [
   '001_users.sql',
   '002_profiles.sql',
   '003_add_verification_status.sql',
+  '004_startup_school.sql',
 ];
 
 async function migrate() {
