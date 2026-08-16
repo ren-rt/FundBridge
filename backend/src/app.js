@@ -17,3 +17,9 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 const investorsRoutes = require('./modules/investors/investors.routes');
 app.use('/api/investors', investorsRoutes);
+
+const authRoutes = require('./modules/auth/auth.routes');
+app.use('/api/auth', authRoutes);
+
+const matchesRoutes = require('./modules/matches/matches.routes');
+app.use('/api/matches', matchesRoutes);
