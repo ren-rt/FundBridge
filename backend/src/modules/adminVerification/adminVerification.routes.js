@@ -8,7 +8,7 @@ const verifyJWT = require('../../middleware/jwt.middleware');
 const requireAdmin = require('../../middleware/requireAdmin');
 
 // Order matters: verify identity first, then check role.
-router.use(verifyFirebaseToken, requireAdmin);
+router.use(verifyJWT, requireAdmin);
 
 router.get('/', controller.listPending);
 router.get('/:id', profileIdValidator, controller.getOne);
