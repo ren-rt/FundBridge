@@ -7,6 +7,7 @@ const MIGRATION_ORDER = [
   '002_profiles.sql',
   '003_add_verification_status.sql',
   '004_startup_school.sql',
+  '005_pitches.sql',
 ];
 
 async function migrate() {
