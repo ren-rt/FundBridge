@@ -12,5 +12,8 @@ app.get('/health', (req, res) => {
 const foundersRoutes = require('./modules/founders/founders.routes');
 app.use('/api/founders', foundersRoutes);
 
+const adminVerificationRoutes = require('./modules/adminVerification/adminVerification.routes');
+app.use('/api/admin/verifications', adminVerificationRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

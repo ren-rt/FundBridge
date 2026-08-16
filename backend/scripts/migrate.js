@@ -5,6 +5,7 @@ const pool = require('../src/config/db');
 const MIGRATION_ORDER = [
   '001_users.sql',
   '002_profiles.sql',
+  '003_add_verification_status.sql',
 ];
 
 async function migrate() {
