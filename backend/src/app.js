@@ -18,5 +18,8 @@ app.use('/api/admin/verifications', adminVerificationRoutes);
 const startupSchoolRoutes = require('./modules/startupSchool/startupSchool.routes');
 app.use('/api/startup-school', startupSchoolRoutes);
 
+const pitchesRoutes = require('./modules/pitches/pitches.routes');
+app.use('/api/pitches', pitchesRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
