@@ -21,5 +21,8 @@ app.use('/api/startup-school', startupSchoolRoutes);
 const pitchesRoutes = require('./modules/pitches/pitches.routes');
 app.use('/api/pitches', pitchesRoutes);
 
+const feedRoutes = require('./modules/feed/feed.routes');
+app.use('/api/feed', feedRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
