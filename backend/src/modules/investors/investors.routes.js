@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const controller = require('./investors.controller');
 const { createInvestorValidator } = require('./investors.validator');
-const verifyFirebaseToken = require('../../middleware/auth.middleware');
+const verifyJWT = require('../../middleware/jwt.middleware');
 
-router.post('/', verifyFirebaseToken, createInvestorValidator, controller.create);
-router.get('/:id', verifyFirebaseToken, controller.get);
-router.get('/', verifyFirebaseToken, controller.list);
-router.put('/:id', verifyFirebaseToken, controller.update);
+router.post('/', verifyJWT, createInvestorValidator, controller.create);
+router.get('/:id', verifyJWT, controller.get);
+router.get('/', verifyJWT, controller.list);
+router.put('/:id', verifyJWT, controller.update);
 
 module.exports = router;
