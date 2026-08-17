@@ -8,6 +8,7 @@ const MIGRATION_ORDER = [
   '003_add_verification_status.sql',
   '004_startup_school.sql',
   '005_pitches.sql',
+  '006_dealroom.sql'
 ];
 
 async function migrate() {
