@@ -36,5 +36,8 @@ app.use('/api/auth', authRoutes);
 const matchesRoutes = require('./modules/matches/matches.routes');
 app.use('/api/matches', matchesRoutes);
 
+const dealroomRoutes = require('./modules/dealroom/dealroom.routes');
+app.use('/api/dealrooms', dealroomRoutes);
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
