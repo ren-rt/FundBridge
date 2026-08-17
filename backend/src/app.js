@@ -1,7 +1,16 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
+
+app.set('io', io);
+ 
+const initDealRoomSocket = require('./modules/dealroom/dealroom.socket');
+initDealRoomSocket(io);
 
 app.use(express.json());
 app.use(require('cors')());
@@ -40,4 +49,4 @@ const dealroomRoutes = require('./modules/dealroom/dealroom.routes');
 app.use('/api/dealrooms', dealroomRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
