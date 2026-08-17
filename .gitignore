@@ -6,3 +6,4 @@ dist/
 build/
 *.log
 backend/src/config/firebase-service-account.json
+backend/storage/
