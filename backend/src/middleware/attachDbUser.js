@@ -1,6 +1,6 @@
 // backend/src/middleware/attachDbUser.js
 //
-// Must run AFTER verifyFirebaseToken. Unlike requireAdmin, this does NOT
+// Must run AFTER verifyJWT. Unlike requireAdmin, this does NOT
 // restrict by role -- it just looks up the internal users.id and role
 // for whoever is making the request, so routes can record "who did this"
 // regardless of FOUNDER/INVESTOR/ADMIN.
