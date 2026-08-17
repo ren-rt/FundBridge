@@ -9,7 +9,7 @@ const attachDbUser = require('../../middleware/attachDbUser');
 const requireAdmin = require('../../middleware/requireAdmin');
 
 // Every route needs a known, verified user.
-router.use(verifyFirebaseToken, attachDbUser);
+router.use(verifyJWT, attachDbUser);
 
 // Any authenticated user (founder/investor/admin) can browse courses and their own progress.
 router.get('/courses', controller.listCourses);
