@@ -1,4 +1,3 @@
-// backend/src/modules/adminVerification/adminVerification.routes.js
 const express = require('express');
 const router = express.Router();
 

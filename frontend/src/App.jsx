@@ -1,0 +1,122 @@
+import { Routes, Route } from 'react-router-dom'
+import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
+
+import Home from './pages/Home'
+import FounderHome from './pages/FounderHome'
+import InvestorHome from './pages/InvestorHome'
+
+import FounderProfile from './pages/FounderProfile'
+import InvestorProfile from './pages/InvestorProfile'
+
+import AdminVerification from './pages/AdminVerification'
+import StartupSchool from './pages/StartupSchool'
+import PitchSubmission from './pages/PitchSubmission'
+import Feed from './pages/Feed'
+
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import NotFound from './pages/NotFound'
+
+function App() {
+  return (
+    <Routes>
+
+      {/* Public routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+
+      {/* Main application */}
+      <Route element={<Layout />}>
+
+        {/* Role-aware homepage */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Public feed */}
+        <Route path="/feed" element={<Feed />} />
+
+        {/* Founder */}
+        <Route
+          path="/founder-home"
+          element={
+            <ProtectedRoute>
+              <FounderHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/founder"
+          element={
+            <ProtectedRoute>
+              <FounderProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Investor */}
+        <Route
+          path="/investor-home"
+          element={
+            <ProtectedRoute>
+              <InvestorHome />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/profile/investor"
+          element={
+            <ProtectedRoute>
+              <InvestorProfile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminVerification />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Founder learning */}
+        <Route
+          path="/startup-school"
+          element={
+            <ProtectedRoute>
+              <StartupSchool />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Founder pitch */}
+        <Route
+          path="/pitch"
+          element={
+            <ProtectedRoute>
+              <PitchSubmission />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 */}
+        <Route path="*" element={<NotFound />} />
+
+      </Route>
+
+    </Routes>
+  )
+}
+
+export default App
