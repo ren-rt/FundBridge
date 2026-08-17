@@ -2,16 +2,12 @@ const express = require('express');
 const router = express.Router();
 
 const controller = require('./startupSchool.controller');
-const {
-  courseIdValidator,
-  createCourseValidator,
-} = require('./startupSchool.validator');
-
+const { courseIdValidator, createCourseValidator } = require('./startupSchool.validator');
 const verifyJWT = require('../../middleware/jwt.middleware');
 const attachDbUser = require('../../middleware/attachDbUser');
 const requireAdmin = require('../../middleware/requireAdmin');
 
-// Every route needs an authenticated JWT and a matching database user.
+// Every route needs a known, verified user.
 router.use(verifyJWT, attachDbUser);
 
 // Any authenticated user can browse courses and their own progress.

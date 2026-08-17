@@ -8,13 +8,13 @@ const pool = require('../config/db');
 
 async function attachDbUser(req, res, next) {
   try {
-    if (!req.user || !req.user.uid) {
+    if (!req.user || !req.user.firebase_uid) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
     const { rows } = await pool.query(
       'SELECT id, role FROM users WHERE firebase_uid = $1',
-      [req.user.uid]
+      [req.user.firebase_uid]
     );
 
     if (!rows[0]) {

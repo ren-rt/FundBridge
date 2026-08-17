@@ -36,9 +36,5 @@ app.use('/api/auth', authRoutes);
 const matchesRoutes = require('./modules/matches/matches.routes');
 app.use('/api/matches', matchesRoutes);
 
-// Start server
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
