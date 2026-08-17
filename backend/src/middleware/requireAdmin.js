@@ -1,6 +1,6 @@
 // backend/src/middleware/requireAdmin.js
 //
-// Must run AFTER verifyFirebaseToken (auth.middleware.js) -- depends on
+// Must run AFTER verifyJWT (auth.middleware.js) -- depends on
 // req.user.uid being set from the decoded Firebase token.
 //
 // Firebase only proves who the caller is; it doesn't know their app
@@ -11,13 +11,13 @@ const pool = require('../config/db');
 
 async function requireAdmin(req, res, next) {
   try {
-    if (!req.user || !req.user.uid) {
+    if (!req.user || !req.user.firebase_uid) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
     const { rows } = await pool.query(
       'SELECT id, role FROM users WHERE firebase_uid = $1',
-      [req.user.uid]
+      [req.user.firebase_uid]
     );
 
     if (!rows[0]) {
