@@ -32,6 +32,9 @@ exports.uploadDocument = async (req, res) => {
       buffer: req.file.buffer,
     });
 
+    const io = req.app.get('io');
+    if (io) io.to(`dealroom:${dealRoomId}`).emit('document-uploaded', doc);
+
     res.status(201).json(doc);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -62,6 +65,15 @@ exports.downloadDocument = async (req, res) => {
 
     const result = await service.downloadDocument(documentId, req.user.dbId);
     if (!result) return res.status(404).json({ error: 'Document not found' });
+
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`dealroom:${result.dealRoomId}`).emit('document-downloaded', {
+        documentId,
+        fileName: result.fileName,
+        downloadedByUserId: req.user.dbId,
+      });
+    }
 
     res.set('Content-Type', result.mimeType || 'application/octet-stream');
     res.set('Content-Disposition', `attachment; filename="${result.fileName}"`);

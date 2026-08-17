@@ -117,7 +117,7 @@ async function downloadDocument(documentId, requestingUserId) {
     fileName: doc.file_name,
   });
 
-  return { buffer: plaintext, fileName: doc.file_name, mimeType: doc.mime_type };
+  return { buffer: plaintext, fileName: doc.file_name, mimeType: doc.mime_type, dealRoomId: doc.deal_room_id };
 }
 
 async function getAuditLog(dealRoomId) {
@@ -129,6 +129,56 @@ async function getAuditLog(dealRoomId) {
   return rows;
 }
 
+// Encrypted the same way as documents -- same per-room derived key,
+// same AES-256-GCM. Content is returned as plaintext directly in the
+// response since we already have it in memory; no round-trip decrypt
+// needed for the sender's own just-sent message.
+async function sendMessage({ dealRoomId, senderUserId, content }) {
+  const roomKey = deriveRoomKey(dealRoomId);
+  const { ciphertext, iv, authTag } = encryptBuffer(Buffer.from(content, 'utf8'), roomKey);
+
+  const { rows } = await pool.query(
+    `INSERT INTO deal_room_messages
+       (deal_room_id, sender_user_id, ciphertext, encryption_iv, encryption_auth_tag)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING id, deal_room_id, sender_user_id, created_at`,
+    [dealRoomId, senderUserId, ciphertext.toString('base64'), iv.toString('base64'), authTag.toString('base64')]
+  );
+
+  return { ...rows[0], content };
+}
+
+async function getMessages(dealRoomId, { limit = 50 } = {}) {
+  const { rows } = await pool.query(
+    `SELECT id, deal_room_id, sender_user_id, ciphertext, encryption_iv, encryption_auth_tag, created_at
+     FROM deal_room_messages
+     WHERE deal_room_id = $1
+     ORDER BY created_at DESC
+     LIMIT $2`,
+    [dealRoomId, limit]
+  );
+
+  const roomKey = deriveRoomKey(dealRoomId);
+  // Reverse back to chronological order for display -- fetched DESC so
+  // LIMIT grabs the most recent N, not the oldest N.
+  return rows.reverse().map((row) => {
+    const plaintext = decryptBuffer(
+      Buffer.from(row.ciphertext, 'base64'),
+      roomKey,
+      Buffer.from(row.encryption_iv, 'base64'),
+      Buffer.from(row.encryption_auth_tag, 'base64')
+    ).toString('utf8');
+
+    return {
+      id: row.id,
+      deal_room_id: row.deal_room_id,
+      sender_user_id: row.sender_user_id,
+      content: plaintext,
+      created_at: row.created_at,
+    };
+  });
+}
+
 module.exports = {
   ensureDealRoom,
   getDealRoomById,
@@ -137,4 +187,6 @@ module.exports = {
   listDocuments,
   downloadDocument,
   getAuditLog,
+  sendMessage,
+  getMessages,
 };
