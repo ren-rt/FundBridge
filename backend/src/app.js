@@ -2,13 +2,16 @@ const express = require('express');
 require('dotenv').config();
 
 const app = express();
+
 app.use(express.json());
 app.use(require('cors')());
 
+// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Routes
 const foundersRoutes = require('./modules/founders/founders.routes');
 app.use('/api/founders', foundersRoutes);
 

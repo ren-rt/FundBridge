@@ -1,0 +1,188 @@
+
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth'
+import { auth } from '../firebase/firebase'
+
+const AuthContext = createContext(null)
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(null)
+  const [appUser, setAppUser] = useState(null)
+  const [appToken, setAppToken] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Used only when creating a new account.
+  const pendingRoleRef = useRef(null)
+
+  // Used so login() can wait for the backend authentication
+  // to finish before returning the application user.
+  const backendAuthPromiseRef = useRef(null)
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser)
+
+      if (!firebaseUser) {
+        setAppUser(null)
+        setAppToken(null)
+        pendingRoleRef.current = null
+        backendAuthPromiseRef.current = null
+        setLoading(false)
+        return
+      }
+
+      const authenticateWithBackend = async () => {
+        try {
+          const idToken = await firebaseUser.getIdToken()
+
+          const body = {
+            idToken,
+          }
+
+          // During signup, send the selected role.
+          if (pendingRoleRef.current) {
+            body.role = pendingRoleRef.current
+          }
+
+          const res = await fetch(
+            'http://localhost:3000/api/auth/login',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(body),
+            }
+          )
+
+          const data = await res.json().catch(() => null)
+
+          if (!res.ok) {
+            throw new Error(
+              data?.message ||
+              data?.error ||
+              'Backend authentication failed'
+            )
+          }
+
+          const backendUser = data?.user || null
+          const backendToken = data?.token || null
+
+          setAppToken(backendToken)
+          setAppUser(backendUser)
+
+          return backendUser
+        } catch (err) {
+          console.error(
+            'Backend token exchange failed:',
+            err.message
+          )
+
+          setAppUser(null)
+          setAppToken(null)
+
+          throw err
+        } finally {
+          pendingRoleRef.current = null
+          setLoading(false)
+        }
+      }
+
+      backendAuthPromiseRef.current = authenticateWithBackend()
+
+      try {
+        await backendAuthPromiseRef.current
+      } catch {
+        // Error already handled above.
+      }
+    })
+
+    return unsubscribe
+  }, [])
+
+  async function login(email, password) {
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    )
+
+    // onAuthStateChanged will now exchange the Firebase
+    // account for the application user.
+    //
+    // Wait until that exchange has completed before Login.jsx
+    // tries to read the role.
+    if (backendAuthPromiseRef.current) {
+      await backendAuthPromiseRef.current
+    }
+
+    return {
+      firebaseUser: credential.user,
+      appUser,
+    }
+  }
+
+  async function signup(email, password, selectedRole) {
+    pendingRoleRef.current = selectedRole
+
+    try {
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      )
+
+      // Signup's role is handled by the backend exchange.
+      if (backendAuthPromiseRef.current) {
+        await backendAuthPromiseRef.current
+      }
+
+      return credential.user
+    } catch (err) {
+      pendingRoleRef.current = null
+      throw err
+    }
+  }
+
+  async function logout() {
+    await signOut(auth)
+
+    setUser(null)
+    setAppUser(null)
+    setAppToken(null)
+
+    pendingRoleRef.current = null
+    backendAuthPromiseRef.current = null
+  }
+
+  async function getToken() {
+    return appToken
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        appUser,
+        appToken,
+        loading,
+        login,
+        signup,
+        logout,
+        getToken,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export function useAuth() {
+  return useContext(AuthContext)
+}
+

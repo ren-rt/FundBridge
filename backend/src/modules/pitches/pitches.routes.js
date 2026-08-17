@@ -1,4 +1,3 @@
-// backend/src/modules/pitches/pitches.routes.js
 const express = require('express');
 const router = express.Router();
 
@@ -15,7 +14,7 @@ router.use(verifyJWT, attachDbUser);
 
 router.post('/', createPitchValidator, controller.create);
 router.get('/', controller.listAll);
-router.get('/mine', controller.listMine); // must come before /:id
+router.get('/mine', controller.listMine);
 router.get('/:id', pitchIdValidator, controller.getOne);
 router.patch('/:id', updatePitchValidator, controller.update);
 router.delete('/:id', pitchIdValidator, controller.remove);
