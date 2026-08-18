@@ -10,9 +10,13 @@ exports.create = async (req, res) => {
     if (!profileId) {
       return res.status(403).json({ error: 'No founder profile found for this account' });
     }
+    if ((req.body.status || 'SUBMITTED') === 'SUBMITTED') {
+      await service.assertCanSubmit(req.user.dbId);
+    }
     const pitch = await service.createPitch(profileId, req.body);
     res.status(201).json(pitch);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     res.status(500).json({ error: err.message });
   }
 };
@@ -59,9 +63,14 @@ exports.update = async (req, res) => {
       return res.status(403).json({ error: 'You do not own this pitch' });
     }
 
+    if (req.body.status === 'SUBMITTED' && pitch.status !== 'SUBMITTED') {
+      await service.assertCanSubmit(req.user.dbId);
+    }
+
     const updated = await service.updatePitch(req.params.id, req.body);
     res.json(updated);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     res.status(500).json({ error: err.message });
   }
 };
