@@ -36,3 +36,21 @@ exports.createQuizQuestionValidator = [
   body('correct_option_index').isInt({ min: 0 }),
   body('order_index').optional().isInt({ min: 0 }),
 ];
+
+exports.questionIdValidator = [
+  param('questionId').isUUID(),
+];
+
+exports.updateQuizQuestionValidator = [
+  param('questionId').isUUID(),
+  body('question_text').optional().isString().trim().notEmpty(),
+  body('options').optional().isArray({ min: 2 }),
+  body('options.*').optional().isString(),
+  body('correct_option_index').optional().isInt({ min: 0 }),
+  body('order_index').optional().isInt({ min: 0 }),
+];
+
+exports.adminQuizListValidator = [
+  param('id').isUUID(),
+  query('type').isIn(['MID_VIDEO', 'FINAL']),
+];

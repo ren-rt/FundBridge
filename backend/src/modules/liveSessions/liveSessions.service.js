@@ -75,4 +75,9 @@ async function isRegistered(liveSessionId, userId) {
   return rows.length > 0;
 }
 
-module.exports = { listUpcoming, getById, create, reschedule, register, unregister, isRegistered };
+async function cancel(id) {
+  const { rows } = await pool.query(`DELETE FROM live_sessions WHERE id = $1 RETURNING id`, [id]);
+  return rows[0] || null;
+}
+
+module.exports = { listUpcoming, getById, create, reschedule, register, unregister, isRegistered, cancel };

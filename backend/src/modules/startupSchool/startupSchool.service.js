@@ -180,6 +180,36 @@ async function markCourseComplete(userId, courseId) {
   return rows[0];
 }
 
+// Admin-only listing that includes correct_option_index -- learners never
+// reach this, only getQuizQuestions (which strips it) is exposed to them.
+async function listQuizQuestionsForAdmin(courseId, questionType) {
+  const { rows } = await pool.query(
+    `SELECT * FROM quiz_questions WHERE course_id = $1 AND question_type = $2 ORDER BY order_index ASC`,
+    [courseId, questionType]
+  );
+  return rows;
+}
+
+async function updateQuizQuestion(questionId, data) {
+  const { question_text, options, correct_option_index, order_index } = data;
+  const { rows } = await pool.query(
+    `UPDATE quiz_questions SET
+       question_text = COALESCE($1, question_text),
+       options = COALESCE($2, options),
+       correct_option_index = COALESCE($3, correct_option_index),
+       order_index = COALESCE($4, order_index)
+     WHERE id = $5
+     RETURNING *`,
+    [question_text || null, options ? JSON.stringify(options) : null, correct_option_index ?? null, order_index ?? null, questionId]
+  );
+  return rows[0] || null;
+}
+
+async function deleteQuizQuestion(questionId) {
+  const { rows } = await pool.query(`DELETE FROM quiz_questions WHERE id = $1 RETURNING id`, [questionId]);
+  return rows[0] || null;
+}
+
 module.exports = {
   listCourses,
   getCourseById,
@@ -190,4 +220,7 @@ module.exports = {
   getQuizQuestions,
   submitQuizAttempt,
   markCourseComplete,
+  listQuizQuestionsForAdmin, 
+  updateQuizQuestion,
+  deleteQuizQuestion,
 };

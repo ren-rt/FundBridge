@@ -120,3 +120,37 @@ exports.createQuizQuestion = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.listQuizQuestionsForAdmin = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    res.json(await service.listQuizQuestionsForAdmin(req.params.id, req.query.type));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateQuizQuestion = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const question = await service.updateQuizQuestion(req.params.questionId, req.body);
+    if (!question) return res.status(404).json({ error: 'Not found' });
+    res.json(question);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteQuizQuestion = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const question = await service.deleteQuizQuestion(req.params.questionId);
+    if (!question) return res.status(404).json({ error: 'Not found' });
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
