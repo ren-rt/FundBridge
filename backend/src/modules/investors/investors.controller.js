@@ -18,6 +18,20 @@ exports.get = async (req, res) => {
   res.json(investor);
 };
 
+exports.getPublic = async (req, res) => {
+  try {
+    const investor = await investorService.getPublicInvestor(req.params.id);
+
+    if (!investor) {
+      return res.status(404).json({ error: 'Investor not found' });
+    }
+
+    res.json(investor);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.list = async (req, res) => {
   const investors = await investorService.listInvestors();
   res.json(investors);

@@ -41,3 +41,22 @@ exports.updateInvestor = async (id, data) => {
   );
   return result.rows[0];
 };
+
+exports.getPublicInvestor = async (id) => {
+  const result = await pool.query(
+    `SELECT
+       id,
+       firm_name,
+       primary_domain,
+       secondary_domains,
+       stage_pref,
+       location,
+       investment_thesis
+     FROM profiles
+     WHERE id = $1
+       AND role = 'INVESTOR'`,
+    [id]
+  );
+
+  return result.rows[0];
+};
