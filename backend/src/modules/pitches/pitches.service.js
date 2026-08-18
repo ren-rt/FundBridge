@@ -1,6 +1,26 @@
 
 const pool = require('../../config/db');
 
+async function hasCompletedAllModules(userId) {
+  const { rows } = await pool.query(
+    `SELECT
+       (SELECT COUNT(*) FROM courses)::int AS total,
+       (SELECT COUNT(*) FROM user_progress WHERE user_id = $1 AND completed_at IS NOT NULL)::int AS completed`,
+    [userId]
+  );
+  const { total, completed } = rows[0];
+  return total > 0 && completed >= total;
+}
+
+async function assertCanSubmit(userId) {
+  const eligible = await hasCompletedAllModules(userId);
+  if (!eligible) {
+    const err = new Error('Complete all Startup School modules before submitting a pitch');
+    err.statusCode = 403;
+    throw err;
+  }
+}
+
 async function getFounderProfileId(userId) {
   const { rows } = await pool.query(
     `SELECT id FROM profiles WHERE user_id = $1 AND role = 'FOUNDER'`,
@@ -81,6 +101,8 @@ async function deletePitch(id) {
 
 module.exports = {
   getFounderProfileId,
+  hasCompletedAllModules,
+  assertCanSubmit,
   createPitch,
   listAllPitches,
   listPitchesByProfile,
