@@ -18,7 +18,8 @@ const MIGRATION_ORDER = [
   '013_startup_school_quizzes.sql',
   '014_live_sessions.sql',
   '015_bookmarks.sql',
-  '016_pitch_deck_and_match_logs.sql'
+  '016_pitch_deck_and_match_logs.sql',
+  '017_admin_user_management.sql'
 ];
 
 async function migrate() {
