@@ -18,6 +18,8 @@ import Feed from './pages/Feed'
 import DealRooms from './pages/DealRooms'
 import DealRoom from './pages/DealRoom'
 
+import LiveSessions from './pages/LiveSessions'
+
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import NotFound from './pages/NotFound'
@@ -158,6 +160,14 @@ function App() {
           element={
             <ProtectedRoute>
               <DealRoom />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/live-sessions"
+          element={
+            <ProtectedRoute>
+              <LiveSessions />
             </ProtectedRoute>
           }
         />
