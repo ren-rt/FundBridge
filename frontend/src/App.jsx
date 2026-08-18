@@ -11,6 +11,7 @@ import InvestorProfile from './pages/InvestorProfile'
 
 import AdminVerification from './pages/AdminVerification'
 import StartupSchool from './pages/StartupSchool'
+import StartupSchoolModule from './pages/StartupSchoolModule'
 import PitchSubmission from './pages/PitchSubmission'
 import MyPitches from './pages/MyPitches'
 import Feed from './pages/Feed'
@@ -101,6 +102,15 @@ function App() {
           element={
             <ProtectedRoute>
               <StartupSchool />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/startup-school/:id"
+          element={
+            <ProtectedRoute>
+              <StartupSchoolModule />
             </ProtectedRoute>
           }
         />
