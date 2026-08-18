@@ -13,7 +13,8 @@ const MIGRATION_ORDER = [
   '008_founder_profile_personal_fields.sql',
   '009_notifications.sql',
   '010_users_full_name.sql',
-  '011_social_feed.sql'
+  '011_social_feed.sql',
+  '012_pitch_lifecycle.sql'
 ];
 
 async function migrate() {

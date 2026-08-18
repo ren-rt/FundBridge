@@ -176,8 +176,12 @@ function Feed() {
     }
   }, [getToken])
 
-  useEffect(() => {
-    if (appUser) loadFeed()
+    useEffect(() => {
+    if (appUser) {
+      ;(async () => {
+        await loadFeed()
+      })()
+    }
   }, [appUser, loadFeed])
 
   async function handlePostSubmit(e) {

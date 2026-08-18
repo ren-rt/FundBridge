@@ -12,6 +12,7 @@ import InvestorProfile from './pages/InvestorProfile'
 import AdminVerification from './pages/AdminVerification'
 import StartupSchool from './pages/StartupSchool'
 import PitchSubmission from './pages/PitchSubmission'
+import MyPitches from './pages/MyPitches'
 import Feed from './pages/Feed'
 import DealRooms from './pages/DealRooms'
 import DealRoom from './pages/DealRoom'
@@ -19,6 +20,8 @@ import DealRoom from './pages/DealRoom'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import NotFound from './pages/NotFound'
+
+
 
 function App() {
   return (
@@ -108,6 +111,24 @@ function App() {
           element={
             <ProtectedRoute>
               <PitchSubmission />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/pitch/:id"
+          element={
+            <ProtectedRoute>
+              <PitchSubmission />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/pitches/mine"
+          element={
+            <ProtectedRoute>
+              <MyPitches />
             </ProtectedRoute>
           }
         />

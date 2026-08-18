@@ -1,4 +1,4 @@
-// backend/src/modules/pitches/pitches.validator.js
+
 const { body, param } = require('express-validator');
 
 exports.pitchIdValidator = [
@@ -12,6 +12,7 @@ exports.createPitchValidator = [
   body('solution').optional().isString(),
   body('ask_amount').optional().isNumeric(),
   body('image_url').optional().isURL(),
+  body('status').optional().isIn(['DRAFT', 'SUBMITTED']),
 ];
 
 exports.updatePitchValidator = [
@@ -22,4 +23,5 @@ exports.updatePitchValidator = [
   body('solution').optional().isString(),
   body('ask_amount').optional().isNumeric(),
   body('image_url').optional().isURL(),
+  body('status').optional().isIn(['DRAFT', 'SUBMITTED']),
 ];
