@@ -81,4 +81,24 @@ async function toggleReaction(postId, userId) {
   return { reacted: true };
 }
 
+async function getPostOwner(postId) {
+  const { rows } = await pool.query(`SELECT user_id FROM posts WHERE id = $1`, [postId]);
+  return rows[0] ? rows[0].user_id : null;
+}
+
+async function getCommentOwner(commentId) {
+  const { rows } = await pool.query(`SELECT user_id FROM post_comments WHERE id = $1`, [commentId]);
+  return rows[0] ? rows[0].user_id : null;
+}
+
+async function deletePost(postId) {
+  const { rows } = await pool.query(`DELETE FROM posts WHERE id = $1 RETURNING id`, [postId]);
+  return rows[0] || null;
+}
+
+async function deleteComment(commentId) {
+  const { rows } = await pool.query(`DELETE FROM post_comments WHERE id = $1 RETURNING id`, [commentId]);
+  return rows[0] || null;
+}
+
 module.exports = { createPost, listPosts, addComment, listComments, toggleReaction };
