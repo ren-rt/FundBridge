@@ -5,6 +5,13 @@ import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 
+const STAGE_OPTIONS = [
+  { value: 'PRE_SEED', label: 'Pre-Seed' },
+  { value: 'SEED', label: 'Seed' },
+  { value: 'SERIES_A', label: 'Series A' },
+  { value: 'SERIES_B', label: 'Series B' },
+]
+
 function InvestorProfile() {
   const navigate = useNavigate()
 
@@ -14,7 +21,7 @@ function InvestorProfile() {
     firm_name: '',
     primary_domain: '',
     secondary_domains: '',
-    stage_pref: '',
+    stage_pref: [],
     ticket_min: '',
     ticket_max: '',
     location: '',
@@ -34,6 +41,17 @@ function InvestorProfile() {
       setSaved(false)
       setError('')
     }
+  }
+
+  function toggleStagePref(value) {
+    setForm((prev) => ({
+      ...prev,
+      stage_pref: prev.stage_pref.includes(value)
+        ? prev.stage_pref.filter((v) => v !== value)
+        : [...prev.stage_pref, value],
+    }))
+    setSaved(false)
+    setError('')
   }
 
   async function handleSubmit(e) {
@@ -69,7 +87,10 @@ function InvestorProfile() {
             user_id: appUser.id,
             firm_name: form.firm_name,
             primary_domain: form.primary_domain,
-            secondary_domains: form.secondary_domains,
+            secondary_domains: form.secondary_domains
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean),
             stage_pref: form.stage_pref,
             ticket_min: form.ticket_min,
             ticket_max: form.ticket_max,
@@ -115,19 +136,18 @@ function InvestorProfile() {
   const requiredFields = [
     form.firm_name,
     form.primary_domain,
-    form.stage_pref,
     form.ticket_min,
     form.ticket_max,
     form.location,
     form.investment_thesis,
   ]
 
-  const completedFields = requiredFields.filter(
-    (field) => field.trim() !== ''
-  ).length
+  const completedFields =
+    requiredFields.filter((field) => field.trim() !== '').length +
+    (form.stage_pref.length > 0 ? 1 : 0)
 
   const completion = Math.round(
-    (completedFields / requiredFields.length) * 100
+    (completedFields / (requiredFields.length + 1)) * 100
   )
 
   return (
@@ -187,13 +207,30 @@ function InvestorProfile() {
 
           </div>
 
-          <Input
-            label="Stage Preference"
-            placeholder="Pre-seed, Seed"
-            value={form.stage_pref}
-            onChange={handleChange('stage_pref')}
-            required
-          />
+          <div className="flex flex-col gap-1.5 text-left">
+
+            <label className="text-sm font-medium text-navy-100">
+              Stage Preference
+            </label>
+
+            <div className="flex gap-2 flex-wrap">
+              {STAGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => toggleStagePref(opt.value)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                    form.stage_pref.includes(opt.value)
+                      ? 'bg-gold-500 text-navy-950'
+                      : 'bg-navy-950/60 border border-navy-700 text-navy-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
 
