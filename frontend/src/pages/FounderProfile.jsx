@@ -5,13 +5,23 @@ import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 
+const STAGE_OPTIONS = [
+  { value: 'PRE_SEED', label: 'Pre-Seed' },
+  { value: 'SEED', label: 'Seed' },
+  { value: 'SERIES_A', label: 'Series A' },
+  { value: 'SERIES_B', label: 'Series B' },
+]
+
 function FounderProfile() {
   const navigate = useNavigate()
-
   const { getToken, appUser } = useAuth()
 
   const [form, setForm] = useState({
     name: appUser?.full_name || '',
+    company: '',
+    industry: '',
+    stage: '',
+    country: '',
     location: '',
     bio: '',
     skills: '',
@@ -39,6 +49,11 @@ function FounderProfile() {
 
     if (!file) return
 
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file.')
+      return
+    }
+
     const reader = new FileReader()
 
     reader.onload = () => {
@@ -47,6 +62,7 @@ function FounderProfile() {
         photo: reader.result,
       })
       setSaved(false)
+      setError('')
     }
 
     reader.readAsDataURL(file)
@@ -55,39 +71,50 @@ function FounderProfile() {
   async function handleSubmit(e) {
     e.preventDefault()
 
+    setSaved(false)
     setError('')
 
     try {
       const token = await getToken()
 
       if (!token) {
-        throw new Error('Authentication token not available. Please log in again.')
+        throw new Error(
+          'Authentication token not available. Please log in again.'
+        )
       }
 
-      const res = await fetch('http://localhost:3000/api/founders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-  user_id: appUser?.id,
-  company: form.name,
-  industry: form.skills,
-  stage: form.experience,
-  country: form.location,
-  region: form.location,
-  funding_amount: '',
-  description: form.bio,
-}),
-      })
+      const res = await fetch(
+        'http://localhost:3000/api/founders',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            full_name: form.name,
+            company: form.company,
+            industry: form.industry,
+            stage: form.stage,
+            country: form.country,
+            region: form.location,
+            bio: form.bio,
+            skills: form.skills,
+            experience: form.experience,
+            linkedin_url: form.linkedin || null,
+            photo_url: form.photo || null,
+          }),
+        }
+      )
 
       if (!res.ok) {
         const message = await res.text()
-        throw new Error(message || 'Failed to save founder profile')
+
+        throw new Error(
+          message || 'Failed to save founder profile'
+        )
       }
 
-      // Keep the existing frontend completion behaviour
       localStorage.setItem(
         'founderProfile',
         JSON.stringify(form)
@@ -101,14 +128,24 @@ function FounderProfile() {
       setSaved(true)
 
     } catch (err) {
-      console.error('Founder profile save error:', err)
-      setError(err.message || 'Could not save founder profile')
+      console.error(
+        'Founder profile save error:',
+        err
+      )
+
+      setError(
+        err.message ||
+        'Could not save founder profile'
+      )
     }
   }
 
   const requiredFields = [
     form.name,
-    form.location,
+    form.company,
+    form.industry,
+    form.stage,
+    form.country,
     form.bio,
     form.skills,
     form.experience,
@@ -131,7 +168,8 @@ function FounderProfile() {
         </h1>
 
         <p className="text-navy-400 mt-2">
-          Tell investors who you are and what you bring to the table.
+          Tell investors who you are, what you are building,
+          and what you bring to the table.
         </p>
       </div>
 
@@ -191,11 +229,11 @@ function FounderProfile() {
 
           <div>
             <h2 className="text-lg font-semibold text-navy-100">
-              Personal Information
+              Founder & Startup Information
             </h2>
 
             <p className="text-sm text-navy-400 mt-1">
-              Complete your founder identity before moving on to Startup School.
+              Give investors the basic information about you and your startup.
             </p>
           </div>
 
@@ -208,12 +246,73 @@ function FounderProfile() {
           />
 
           <Input
-            label="Location"
-            placeholder="Colombo, Sri Lanka"
-            value={form.location}
-            onChange={handleChange('location')}
+            label="Company name"
+            placeholder="FundBridge Inc."
+            value={form.company}
+            onChange={handleChange('company')}
             required
           />
+
+          <div className="grid grid-cols-2 gap-4">
+
+            <Input
+              label="Industry"
+              placeholder="Fintech"
+              value={form.industry}
+              onChange={handleChange('industry')}
+              required
+            />
+
+            <Input
+              label="Country"
+              placeholder="Sri Lanka"
+              value={form.country}
+              onChange={handleChange('country')}
+              required
+            />
+
+          </div>
+
+          <Input
+            label="Location / Region"
+            placeholder="Colombo"
+            value={form.location}
+            onChange={handleChange('location')}
+          />
+
+          <div className="flex flex-col gap-1.5 text-left">
+
+            <label className="text-sm font-medium text-navy-100">
+              Funding Stage
+            </label>
+
+            <div className="flex gap-2 flex-wrap">
+
+              {STAGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setForm({
+                      ...form,
+                      stage: opt.value,
+                    })
+                    setSaved(false)
+                    setError('')
+                  }}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                    form.stage === opt.value
+                      ? 'bg-gold-500 text-navy-950'
+                      : 'bg-navy-950/60 border border-navy-700 text-navy-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+
+            </div>
+
+          </div>
 
           <div className="flex flex-col gap-1.5 text-left">
 
@@ -223,7 +322,7 @@ function FounderProfile() {
 
             <textarea
               rows={5}
-              placeholder="Tell investors a little about yourself, your background and what motivates you."
+              placeholder="Tell investors about yourself, your background and what motivates you."
               value={form.bio}
               onChange={handleChange('bio')}
               required

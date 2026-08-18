@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
+
 const controller = require('./founders.controller');
 const { createFounderValidator } = require('./founders.validator');
 const verifyJWT = require('../../middleware/jwt.middleware');
+const attachDbUser = require('../../middleware/attachDbUser');
 
-router.post('/', verifyJWT, createFounderValidator, controller.create);
-router.get('/:id', verifyJWT, controller.get);
-router.get('/', verifyJWT, controller.list);
-router.put('/:id', verifyJWT, controller.update);
+router.use(verifyJWT, attachDbUser);
+
+router.post('/', createFounderValidator, controller.create);
+router.get('/:id', controller.get);
+router.get('/', controller.list);
+router.put('/:id', controller.update);
 
 module.exports = router;

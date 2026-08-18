@@ -5,7 +5,10 @@ exports.create = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const founder = await founderService.createFounder(req.body);
+    const founder = await founderService.createFounder({
+  ...req.body,
+  user_id: req.user.dbId,
+});
     res.status(201).json(founder);
   } catch (err) {
     res.status(500).json({ error: err.message });
