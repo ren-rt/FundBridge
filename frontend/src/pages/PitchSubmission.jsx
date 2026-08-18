@@ -15,6 +15,7 @@ function PitchSubmission() {
     title: '',
     summary: '',
     askAmount: '',
+    coverImage: '',
     deckLink: '',
   })
 
@@ -42,7 +43,8 @@ function PitchSubmission() {
           title: pitch.title || '',
           summary: pitch.summary || '',
           askAmount: pitch.ask_amount || '',
-          deckLink: pitch.image_url || '',
+          coverImage: pitch.image_url || '',
+          deckLink: pitch.deck_url || '',
         })
         setStatus(pitch.status)
       } catch (err) {
@@ -75,10 +77,8 @@ function PitchSubmission() {
         title: form.title,
         summary: form.summary,
         ask_amount: form.askAmount || null,
-        // No dedicated "deck" field exists on the backend yet (pitch decks
-        // aren't viewable inline anywhere in the app) -- this reuses the
-        // pitch's image_url column as a stand-in link for now.
-        image_url: form.deckLink || null,
+        image_url: form.coverImage || null,
+        deck_url: form.deckLink || null,
         status: nextStatus,
       }
 
@@ -178,7 +178,14 @@ function PitchSubmission() {
           />
 
           <Input
-            label="Pitch deck link"
+            label="Cover image URL"
+            placeholder="https://..."
+            value={form.coverImage}
+            onChange={handleChange('coverImage')}
+          />
+
+          <Input
+            label="Pitch deck link (PDF or slide URL)"
             placeholder="https://..."
             value={form.deckLink}
             onChange={handleChange('deckLink')}
