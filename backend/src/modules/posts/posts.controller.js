@@ -1,4 +1,3 @@
-
 const { validationResult } = require('express-validator');
 const service = require('./posts.service');
 
@@ -29,6 +28,7 @@ exports.addComment = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
     const comment = await service.addComment(req.params.id, req.user.dbId, req.body.content);
+    if (!comment) return res.status(404).json({ error: 'Post not found' });
     res.status(201).json(comment);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -51,6 +51,7 @@ exports.toggleReaction = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
     const result = await service.toggleReaction(req.params.id, req.user.dbId);
+    if (!result) return res.status(404).json({ error: 'Post not found' });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

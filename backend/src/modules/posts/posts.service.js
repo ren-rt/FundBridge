@@ -1,4 +1,4 @@
-
+// backend/src/modules/posts/posts.service.js
 const pool = require('../../config/db');
 
 async function createPost(userId, content) {
@@ -9,7 +9,9 @@ async function createPost(userId, content) {
   return rows[0];
 }
 
-
+// viewerUserId is used only to compute reacted_by_me for *this* viewer --
+// same author-label fallback pattern as dealroom.service.js
+// (company -> firm_name -> email).
 async function listPosts(viewerUserId, { limit = 20, offset = 0 } = {}) {
   const { rows } = await pool.query(
     `SELECT
@@ -30,7 +32,16 @@ async function listPosts(viewerUserId, { limit = 20, offset = 0 } = {}) {
   return rows;
 }
 
+async function postExists(postId) {
+  const { rows } = await pool.query(`SELECT 1 FROM posts WHERE id = $1`, [postId]);
+  return rows.length > 0;
+}
+
+// Returns null on a missing post instead of letting the insert hit the
+// post_comments -> posts foreign key and throw a raw 500 -- same
+// exists-check-first pattern as dealroom.service.js / founders.service.js.
 async function addComment(postId, userId, content) {
+  if (!(await postExists(postId))) return null;
   const { rows } = await pool.query(
     `INSERT INTO post_comments (post_id, user_id, content) VALUES ($1, $2, $3) RETURNING *`,
     [postId, userId, content]
@@ -56,6 +67,8 @@ async function listComments(postId) {
 
 
 async function toggleReaction(postId, userId) {
+  if (!(await postExists(postId))) return null;
+
   const existing = await pool.query(
     `SELECT 1 FROM post_reactions WHERE post_id = $1 AND user_id = $2`,
     [postId, userId]
