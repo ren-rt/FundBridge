@@ -13,6 +13,8 @@ import AdminVerification from './pages/AdminVerification'
 import StartupSchool from './pages/StartupSchool'
 import PitchSubmission from './pages/PitchSubmission'
 import Feed from './pages/Feed'
+import DealRooms from './pages/DealRooms'
+import DealRoom from './pages/DealRoom'
 
 import Login from './pages/Login'
 import Signup from './pages/Signup'
@@ -106,6 +108,25 @@ function App() {
           element={
             <ProtectedRoute>
               <PitchSubmission />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Deal Room */}
+        <Route
+          path="/dealrooms"
+          element={
+            <ProtectedRoute>
+              <DealRooms />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dealrooms/:dealRoomId"
+          element={
+            <ProtectedRoute>
+              <DealRoom />
             </ProtectedRoute>
           }
         />
