@@ -188,10 +188,7 @@ export function AuthProvider({ children }) {
   )
 }
 
-// Splitting this hook into its own file would fix the warning properly,
-// but requires updating every import site across the app; not worth the
-// churn for a dev-experience-only warning.
-// eslint-disable-next-line react-refresh/only-export-components
+
 export function useAuth() {
   return useContext(AuthContext)
 }
