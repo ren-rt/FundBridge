@@ -1,9 +1,4 @@
-// backend/src/middleware/attachDbUser.js
-//
-// Must run AFTER verifyJWT. Unlike requireAdmin, this does NOT
-// restrict by role -- it just looks up the internal users.id and role
-// for whoever is making the request, so routes can record "who did this"
-// regardless of FOUNDER/INVESTOR/ADMIN.
+
 const pool = require('../config/db');
 
 async function attachDbUser(req, res, next) {
@@ -13,12 +8,16 @@ async function attachDbUser(req, res, next) {
     }
 
     const { rows } = await pool.query(
-      'SELECT id, role FROM users WHERE firebase_uid = $1',
+      'SELECT id, role, status FROM users WHERE firebase_uid = $1',
       [req.user.firebase_uid]
     );
 
     if (!rows[0]) {
       return res.status(403).json({ error: 'No matching user record' });
+    }
+
+    if (rows[0].status === 'SUSPENDED') {
+      return res.status(403).json({ error: 'This account has been suspended' });
     }
 
     req.user.dbId = rows[0].id;

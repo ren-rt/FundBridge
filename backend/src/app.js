@@ -57,5 +57,8 @@ app.use('/api/posts', postsRoutes);
 const liveSessionsRoutes = require('./modules/liveSessions/liveSessions.routes');
 app.use('/api/live-sessions', liveSessionsRoutes);
 
+const adminUsersRoutes = require('./modules/adminUsers/adminUsers.routes');
+app.use('/api/admin/users', adminUsersRoutes);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
