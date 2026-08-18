@@ -105,26 +105,23 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function login(email, password) {
-    const credential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password
-    )
+  const credential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password
+  )
 
-    // onAuthStateChanged will now exchange the Firebase
-    // account for the application user.
-    //
-    // Wait until that exchange has completed before Login.jsx
-    // tries to read the role.
-    if (backendAuthPromiseRef.current) {
-      await backendAuthPromiseRef.current
-    }
+  let backendUser = null
 
-    return {
-      firebaseUser: credential.user,
-      appUser,
-    }
+  if (backendAuthPromiseRef.current) {
+    backendUser = await backendAuthPromiseRef.current
   }
+
+  return {
+    firebaseUser: credential.user,
+    appUser: backendUser,
+  }
+}
 
   async function signup(email, password, selectedRole) {
     pendingRoleRef.current = selectedRole
