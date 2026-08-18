@@ -6,6 +6,7 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 
 function Signup() {
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [role, setRole] = useState('FOUNDER')
@@ -22,8 +23,7 @@ function Signup() {
     setLoading(true)
 
     try {
-      // Pass selected role to AuthContext
-      await signup(email, password, role)
+      await signup(fullName, email, password, role)
 
       // Role is now handled by the backend.
       // No localStorage role is needed.
@@ -73,6 +73,15 @@ function Signup() {
             onSubmit={handleSubmit}
             className="flex flex-col gap-4"
           >
+
+            <Input
+              type="text"
+              label="Full name"
+              placeholder="Jane Doe"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
 
             <Input
               type="email"

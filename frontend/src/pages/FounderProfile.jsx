@@ -11,7 +11,7 @@ function FounderProfile() {
   const { getToken, appUser } = useAuth()
 
   const [form, setForm] = useState({
-    name: '',
+    name: appUser?.full_name || '',
     location: '',
     bio: '',
     skills: '',

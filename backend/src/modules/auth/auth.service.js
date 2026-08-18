@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const auth = require('../../config/firebase');
 const pool = require('../../config/db');
 
-exports.loginWithFirebase = async (idToken, role) => {
+exports.loginWithFirebase = async (idToken, role, fullName) => {
   const decoded = await auth.verifyIdToken(idToken);
   const { uid, email } = decoded;
 
@@ -13,9 +13,12 @@ exports.loginWithFirebase = async (idToken, role) => {
     if (!role || !['FOUNDER', 'INVESTOR'].includes(role)) {
       throw new Error('New user — role (FOUNDER or INVESTOR) is required on first login');
     }
+    if (!fullName || !fullName.trim()) {
+      throw new Error('New user — full name is required on first login');
+    }
     const insertResult = await pool.query(
-      `INSERT INTO users (firebase_uid, email, role) VALUES ($1, $2, $3) RETURNING *`,
-      [uid, email, role]
+      `INSERT INTO users (firebase_uid, email, role, full_name) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [uid, email, role, fullName.trim()]
     );
     user = insertResult.rows[0];
   }

@@ -11,7 +11,8 @@ const MIGRATION_ORDER = [
   '006_dealroom.sql',
   '007_dealroom_messages.sql',
   '008_founder_profile_personal_fields.sql',
-  '009_notifications.sql'
+  '009_notifications.sql',
+  '010_users_full_name.sql'
 ];
 
 async function migrate() {

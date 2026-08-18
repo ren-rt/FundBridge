@@ -17,6 +17,7 @@ export function AuthProvider({ children }) {
 
   // Used only when creating a new account.
   const pendingRoleRef = useRef(null)
+  const pendingNameRef = useRef(null)
 
   // Used so login() can wait for the backend authentication
   // to finish before returning the application user.
@@ -30,6 +31,7 @@ export function AuthProvider({ children }) {
         setAppUser(null)
         setAppToken(null)
         pendingRoleRef.current = null
+        pendingNameRef.current = null
         backendAuthPromiseRef.current = null
         setLoading(false)
         return
@@ -46,6 +48,10 @@ export function AuthProvider({ children }) {
           // During signup, send the selected role.
           if (pendingRoleRef.current) {
             body.role = pendingRoleRef.current
+          }
+
+          if (pendingNameRef.current) {
+            body.fullName = pendingNameRef.current
           }
 
           const res = await fetch(
@@ -88,6 +94,7 @@ export function AuthProvider({ children }) {
           throw err
         } finally {
           pendingRoleRef.current = null
+          pendingNameRef.current = null
           setLoading(false)
         }
       }
@@ -123,8 +130,9 @@ export function AuthProvider({ children }) {
   }
 }
 
-  async function signup(email, password, selectedRole) {
+  async function signup(fullName, email, password, selectedRole) {
     pendingRoleRef.current = selectedRole
+    pendingNameRef.current = fullName
 
     try {
       const credential = await createUserWithEmailAndPassword(
@@ -133,7 +141,7 @@ export function AuthProvider({ children }) {
         password
       )
 
-      // Signup's role is handled by the backend exchange.
+      // Signup's role and name are handled by the backend exchange.
       if (backendAuthPromiseRef.current) {
         await backendAuthPromiseRef.current
       }
@@ -141,6 +149,7 @@ export function AuthProvider({ children }) {
       return credential.user
     } catch (err) {
       pendingRoleRef.current = null
+      pendingNameRef.current = null
       throw err
     }
   }
@@ -153,6 +162,7 @@ export function AuthProvider({ children }) {
     setAppToken(null)
 
     pendingRoleRef.current = null
+    pendingNameRef.current = null
     backendAuthPromiseRef.current = null
   }
 
