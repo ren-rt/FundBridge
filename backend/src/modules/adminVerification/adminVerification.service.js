@@ -1,5 +1,6 @@
 // backend/src/modules/adminVerification/adminVerification.service.js
 const pool = require('../../config/db');
+const { createNotification } = require('../notifications/notifications.service');
 
 async function listPendingVerifications() {
   const { rows } = await pool.query(
@@ -30,7 +31,15 @@ async function approveProfile(profileId, adminUserId) {
      RETURNING *`,
     [profileId, adminUserId]
   );
-  return rows[0] || null;
+  const profile = rows[0] || null;
+  if (profile) {
+    await createNotification(
+      profile.user_id,
+      'Your profile has been verified.',
+      'ADMIN_VERIFICATION'
+    );
+  }
+  return profile;
 }
 
 async function rejectProfile(profileId, adminUserId, reason) {
@@ -44,7 +53,15 @@ async function rejectProfile(profileId, adminUserId, reason) {
      RETURNING *`,
     [profileId, adminUserId, reason]
   );
-  return rows[0] || null;
+  const profile = rows[0] || null;
+  if (profile) {
+    await createNotification(
+      profile.user_id,
+      `Your profile was rejected: ${reason}`,
+      'ADMIN_VERIFICATION'
+    );
+  }
+  return profile;
 }
 
 module.exports = {

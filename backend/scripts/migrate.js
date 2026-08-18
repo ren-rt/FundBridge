@@ -10,7 +10,8 @@ const MIGRATION_ORDER = [
   '005_pitches.sql',
   '006_dealroom.sql',
   '007_dealroom_messages.sql',
-  '008_founder_profile_personal_fields.sql'
+  '008_founder_profile_personal_fields.sql',
+  '009_notifications.sql'
 ];
 
 async function migrate() {
