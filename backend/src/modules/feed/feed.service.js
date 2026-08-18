@@ -10,7 +10,7 @@ async function getFeed(limit, offset) {
        p.ask_amount,
        p.image_url,
        p.created_at,
-       pr.company,
+       COALESCE(pr.company, 'Untitled Pitch') AS company,
        pr.industry,
        pr.country
      FROM pitches p
