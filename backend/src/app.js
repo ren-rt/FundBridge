@@ -48,5 +48,8 @@ app.use('/api/matches', matchesRoutes);
 const dealroomRoutes = require('./modules/dealroom/dealroom.routes');
 app.use('/api/dealrooms', dealroomRoutes);
 
+const notificationsRoutes = require('./modules/notifications/notifications.routes');
+app.use('/api/notifications', notificationsRoutes);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

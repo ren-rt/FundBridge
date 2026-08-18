@@ -1,6 +1,7 @@
 import { Outlet, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Button from './ui/Button'
+import NotificationBell from './NotificationBell'
 
 function Layout() {
   const { user, logout } = useAuth()
@@ -55,9 +56,12 @@ function Layout() {
           </span>
 
           {user ? (
-            <Button variant="ghost" onClick={logout}>
-              Log Out
-            </Button>
+            <div className="flex items-center gap-3">
+              <NotificationBell />
+              <Button variant="ghost" onClick={logout}>
+                Log Out
+              </Button>
+            </div>
           ) : (
             <Link
               to="/login"
