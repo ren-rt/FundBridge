@@ -21,12 +21,33 @@ async function getDealRoomById(dealRoomId) {
 // time, they come into existence the first time either side wants one.
 // Only logs DEAL_ROOM_CREATED on an actual creation, not on a repeat lookup
 // of an existing room.
+//
+// An unverified investor can't open a *new* room -- but if a room already
+// exists (e.g. the investor was verified when it was created, then later
+// unverified/rejected), we still return it rather than lock out existing
+// negotiations that were already in progress.
 async function ensureDealRoom(founderProfileId, investorProfileId, actorUserId) {
   const existing = await pool.query(
     'SELECT * FROM deal_rooms WHERE founder_profile_id = $1 AND investor_profile_id = $2',
     [founderProfileId, investorProfileId]
   );
   if (existing.rows[0]) return existing.rows[0];
+
+  const investorResult = await pool.query(
+    `SELECT verification_status FROM profiles WHERE id = $1 AND role = 'INVESTOR'`,
+    [investorProfileId]
+  );
+  const investor = investorResult.rows[0];
+  if (!investor) {
+    const err = new Error('Investor profile not found');
+    err.statusCode = 404;
+    throw err;
+  }
+  if (investor.verification_status !== 'VERIFIED') {
+    const err = new Error('Investor must be admin-verified before a Deal Room can be created');
+    err.statusCode = 403;
+    throw err;
+  }
 
   const { rows } = await pool.query(
     `INSERT INTO deal_rooms (founder_profile_id, investor_profile_id)
@@ -58,8 +79,6 @@ async function uploadDocument({ dealRoomId, uploadedByUserId, documentType, file
   const roomKey = deriveRoomKey(dealRoomId);
   const { ciphertext, iv, authTag } = encryptBuffer(buffer, roomKey);
 
-  // Generated here, not left to the DB default, so the file on disk and the
-  // DB row share the same id from the start.
   const documentId = crypto.randomUUID();
   await saveEncryptedFile(dealRoomId, documentId, ciphertext);
 
@@ -102,9 +121,6 @@ async function listDocuments(dealRoomId) {
   return rows;
 }
 
-// Access is checked here, not just at the route layer, so this function is safe
-// to call directly (e.g. from tests, or a future internal job) without relying
-// on the controller to have already gated it.
 async function downloadDocument(documentId, requestingUserId) {
   const { rows } = await pool.query('SELECT * FROM deal_room_documents WHERE id = $1', [documentId]);
   const doc = rows[0];
@@ -131,11 +147,6 @@ async function downloadDocument(documentId, requestingUserId) {
   return { buffer: plaintext, fileName: doc.file_name, mimeType: doc.mime_type, dealRoomId: doc.deal_room_id };
 }
 
-// Full room detail with both parties' identifying info attached, for the
-// room header and the wireframe's "Parties" panel. No personal name field
-// exists anywhere in the schema (users only has email; profiles only has
-// company/firm_name) -- label falls back to email when no company/firm
-// name is set, rather than showing blank.
 async function getDealRoomWithParties(dealRoomId) {
   const { rows } = await pool.query(
     `SELECT
@@ -167,9 +178,6 @@ async function getDealRoomWithParties(dealRoomId) {
   };
 }
 
-// All rooms the given user (internal users.id) belongs to, as either
-// founder or investor, with the *other* party's label attached so the
-// list page doesn't need a second request per room.
 async function listRoomsForUser(userId) {
   const { rows } = await pool.query(
     `SELECT
@@ -203,6 +211,7 @@ async function listRoomsForUser(userId) {
     };
   });
 }
+
 async function getAuditLog(dealRoomId) {
   const { rows } = await pool.query(
     `SELECT
@@ -221,11 +230,6 @@ async function getAuditLog(dealRoomId) {
   return rows;
 }
 
-// Creates a PENDING signature row for each party on the room -- called once,
-// right after a SIGNED_AGREEMENT document is uploaded, so every agreement
-// always has exactly one row per participant from the start. Signing later
-// updates these rows rather than creating them on demand, so "has this
-// agreement even been assigned to me" is never ambiguous.
 async function initSignaturesForDocument(documentId, dealRoomId) {
   const { rows } = await pool.query(
     `SELECT fp.user_id AS founder_user_id, ip.user_id AS investor_user_id
@@ -244,9 +248,6 @@ async function initSignaturesForDocument(documentId, dealRoomId) {
   );
 }
 
-// Agreements list, scoped to the requesting user's own signature status --
-// matches the wireframe, where each person only sees/acts on their own
-// "Sign" button, not the counterparty's status.
 async function listAgreements(dealRoomId, requestingUserId) {
   const { rows } = await pool.query(
     `SELECT
@@ -262,8 +263,6 @@ async function listAgreements(dealRoomId, requestingUserId) {
   return rows;
 }
 
-// Access-checked here, not just at the route layer, same as downloadDocument --
-// safe to call directly without relying on the controller having gated it.
 async function signAgreement(documentId, signerUserId) {
   const { rows: docRows } = await pool.query(
     'SELECT deal_room_id, file_name FROM deal_room_documents WHERE id = $1',
@@ -300,10 +299,6 @@ async function signAgreement(documentId, signerUserId) {
   return { ...rows[0], dealRoomId: doc.deal_room_id, fileName: doc.file_name };
 }
 
-// Encrypted the same way as documents -- same per-room derived key,
-// same AES-256-GCM. Content is returned as plaintext directly in the
-// response since we already have it in memory; no round-trip decrypt
-// needed for the sender's own just-sent message.
 async function sendMessage({ dealRoomId, senderUserId, content }) {
   const roomKey = deriveRoomKey(dealRoomId);
   const { ciphertext, iv, authTag } = encryptBuffer(Buffer.from(content, 'utf8'), roomKey);
@@ -330,8 +325,6 @@ async function getMessages(dealRoomId, { limit = 50 } = {}) {
   );
 
   const roomKey = deriveRoomKey(dealRoomId);
-  // Reverse back to chronological order for display -- fetched DESC so
-  // LIMIT grabs the most recent N, not the oldest N.
   return rows.reverse().map((row) => {
     const plaintext = decryptBuffer(
       Buffer.from(row.ciphertext, 'base64'),
