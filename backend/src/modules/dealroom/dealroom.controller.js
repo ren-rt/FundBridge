@@ -8,7 +8,6 @@ exports.createOrGetRoom = async (req, res) => {
     const room = await service.ensureDealRoom(req.body.founderProfileId, req.body.investorProfileId, req.user.dbId);
     res.status(201).json(room);
   } catch (err) {
-    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     res.status(500).json({ error: err.message });
   }
 };
@@ -28,7 +27,7 @@ exports.getRoom = async (req, res) => {
   try {
     const { dealRoomId } = req.params;
 
-    const allowed = await service.isParticipant(dealRoomId, req.user.dbId);
+    const allowed = await service.isAdminOrParticipant(dealRoomId, req.user.dbId, req.user.role);
     if (!allowed) return res.status(403).json({ error: 'Not a participant in this deal room' });
 
     const room = await service.getDealRoomWithParties(dealRoomId);
@@ -74,7 +73,7 @@ exports.listDocuments = async (req, res) => {
   try {
     const { dealRoomId } = req.params;
 
-    const allowed = await service.isParticipant(dealRoomId, req.user.dbId);
+        const allowed = await service.isAdminOrParticipant(dealRoomId, req.user.dbId, req.user.role);
     if (!allowed) return res.status(403).json({ error: 'Not a participant in this deal room' });
 
     const docs = await service.listDocuments(dealRoomId);
@@ -133,7 +132,7 @@ exports.listAgreements = async (req, res) => {
   try {
     const { dealRoomId } = req.params;
 
-    const allowed = await service.isParticipant(dealRoomId, req.user.dbId);
+    const allowed = await service.isAdminOrParticipant(dealRoomId, req.user.dbId, req.user.role);
     if (!allowed) return res.status(403).json({ error: 'Not a participant in this deal room' });
 
     const agreements = await service.listAgreements(dealRoomId, req.user.dbId);
