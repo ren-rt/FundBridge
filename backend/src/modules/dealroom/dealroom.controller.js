@@ -8,6 +8,7 @@ exports.createOrGetRoom = async (req, res) => {
     const room = await service.ensureDealRoom(req.body.founderProfileId, req.body.investorProfileId, req.user.dbId);
     res.status(201).json(room);
   } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     res.status(500).json({ error: err.message });
   }
 };
