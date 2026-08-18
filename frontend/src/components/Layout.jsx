@@ -35,6 +35,13 @@ function Layout() {
         </Link>
 
         <Link
+          to="/live-sessions"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          Live Sessions
+        </Link>
+
+        <Link
           to="/profile/founder"
           className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >
