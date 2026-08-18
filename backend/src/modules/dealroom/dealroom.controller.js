@@ -5,8 +5,34 @@ exports.createOrGetRoom = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   try {
-    const room = await service.ensureDealRoom(req.body.founderProfileId, req.body.investorProfileId);
+    const room = await service.ensureDealRoom(req.body.founderProfileId, req.body.investorProfileId, req.user.dbId);
     res.status(201).json(room);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.listMine = async (req, res) => {
+  try {
+    const rooms = await service.listRoomsForUser(req.user.dbId);
+    res.json(rooms);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getRoom = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const { dealRoomId } = req.params;
+
+    const allowed = await service.isParticipant(dealRoomId, req.user.dbId);
+    if (!allowed) return res.status(403).json({ error: 'Not a participant in this deal room' });
+
+    const room = await service.getDealRoomWithParties(dealRoomId);
+    if (!room) return res.status(404).json({ error: 'Deal room not found' });
+    res.json(room);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -96,6 +122,41 @@ exports.getAuditLog = async (req, res) => {
     const log = await service.getAuditLog(dealRoomId);
     res.json(log);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.listAgreements = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const { dealRoomId } = req.params;
+
+    const allowed = await service.isParticipant(dealRoomId, req.user.dbId);
+    if (!allowed) return res.status(403).json({ error: 'Not a participant in this deal room' });
+
+    const agreements = await service.listAgreements(dealRoomId, req.user.dbId);
+    res.json(agreements);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.signAgreement = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const { documentId } = req.params;
+
+    const result = await service.signAgreement(documentId, req.user.dbId);
+    if (!result) return res.status(404).json({ error: 'Agreement not found' });
+
+    const io = req.app.get('io');
+    if (io) io.to(`dealroom:${result.dealRoomId}`).emit('agreement-signed', result);
+
+    res.json(result);
+  } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
     res.status(500).json({ error: err.message });
   }
 };

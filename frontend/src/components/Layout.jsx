@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import Button from './ui/Button'
 
 function Layout() {
-  const { user, appUser, logout } = useAuth()
+  const { user, logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-navy-950 text-navy-100 flex">
@@ -38,6 +38,13 @@ function Layout() {
           className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >
           Investor Profile
+        </Link>
+
+        <Link
+          to="/dealrooms"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          Deal Rooms
         </Link>
       </aside>
 
