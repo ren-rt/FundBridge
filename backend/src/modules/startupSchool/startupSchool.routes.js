@@ -41,4 +41,25 @@ router.post(
   controller.createQuizQuestion
 );
 
+router.get(
+  '/courses/:id/quiz-questions',
+  requireAdmin,
+  adminQuizListValidator,
+  controller.listQuizQuestionsForAdmin
+);
+
+router.patch(
+  '/quiz-questions/:questionId',
+  requireAdmin,
+  updateQuizQuestionValidator,
+  controller.updateQuizQuestion
+);
+
+router.delete(
+  '/quiz-questions/:questionId',
+  requireAdmin,
+  questionIdValidator,
+  controller.deleteQuizQuestion
+);
+
 module.exports = router;

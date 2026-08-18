@@ -15,5 +15,6 @@ router.patch('/:id/reschedule', requireAdmin, rescheduleValidator, controller.re
 router.post('/:id/register', sessionIdValidator, controller.register);
 router.delete('/:id/register', sessionIdValidator, controller.unregister);
 router.get('/:id/join', sessionIdValidator, controller.join);
+router.delete('/:id', requireAdmin, sessionIdValidator, controller.cancel);
 
 module.exports = router;
