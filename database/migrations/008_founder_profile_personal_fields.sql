@@ -1,3 +1,4 @@
+
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS full_name TEXT,
   ADD COLUMN IF NOT EXISTS bio TEXT,
@@ -6,9 +7,14 @@ ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS linkedin_url TEXT,
   ADD COLUMN IF NOT EXISTS photo_url TEXT;
 
-  DELETE FROM profiles p
-WHERE p.id NOT IN (
-  SELECT MIN(id) FROM profiles GROUP BY user_id, role
+DELETE FROM profiles p
+WHERE p.id IN (
+  SELECT id FROM (
+    SELECT id,
+           ROW_NUMBER() OVER (PARTITION BY user_id, role ORDER BY created_at ASC, id ASC) AS rn
+    FROM profiles
+  ) ranked
+  WHERE ranked.rn > 1
 );
 
 DO $$
