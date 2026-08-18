@@ -17,7 +17,10 @@ const LIVE_SESSIONS = [
   { name: 'Sharaka Inv.', sub: 'Techson' },
 ]
 
-function PitchFeedCard({ item }) {
+function PitchFeedCard({ item, onToggleBookmark }) {
+  const [deckOpen, setDeckOpen] = useState(false)
+  const [deckError, setDeckError] = useState(false)
+
   return (
     <Card className="mb-4">
       <div className="flex items-start justify-between">
@@ -30,6 +33,14 @@ function PitchFeedCard({ item }) {
             </p>
           </div>
         </div>
+
+        <button
+          onClick={() => onToggleBookmark(item.id)}
+          className={`text-sm ${item.bookmarked ? 'text-gold-400' : 'text-navy-400'} hover:text-gold-300`}
+          aria-label="Bookmark"
+        >
+          {item.bookmarked ? '★ Saved' : '☆ Save'}
+        </button>
       </div>
 
       <h3 className="font-semibold text-navy-100 mt-4">{item.title}</h3>
@@ -39,6 +50,35 @@ function PitchFeedCard({ item }) {
         <p className="text-gold-300 text-sm mt-3 font-medium">
           Asking ${Number(item.ask_amount).toLocaleString()}
         </p>
+      )}
+
+      {item.deck_url && (
+        <div className="mt-3">
+          <button
+            onClick={() => setDeckOpen((v) => !v)}
+            className="text-sm text-gold-300 hover:text-gold-100"
+          >
+            {deckOpen ? 'Hide deck' : 'View deck'}
+          </button>
+
+          {deckOpen && (
+            deckError ? (
+              <div className="mt-3 bg-navy-800 border border-navy-700 rounded-lg px-4 py-6 text-center text-sm text-navy-400">
+                Couldn't load this pitch deck.{' '}
+                <a href={item.deck_url} target="_blank" rel="noreferrer" className="text-gold-300 hover:text-gold-100 underline">
+                  Open it directly instead
+                </a>
+              </div>
+            ) : (
+              <iframe
+                src={item.deck_url}
+                title={`${item.title} deck`}
+                className="w-full h-96 mt-3 rounded-lg border border-navy-700"
+                onError={() => setDeckError(true)}
+              />
+            )
+          )}
+        </div>
       )}
     </Card>
   )
@@ -142,6 +182,7 @@ function Feed() {
   const [error, setError] = useState('')
   const [openComments, setOpenComments] = useState({})
   const [commentsByPost, setCommentsByPost] = useState({})
+  const [sort, setSort] = useState('newest')
 
   const loadFeed = useCallback(async () => {
     const token = await getToken()
@@ -154,7 +195,7 @@ function Feed() {
       const headers = { Authorization: `Bearer ${token}` }
 
       const [pitchRes, postRes] = await Promise.all([
-        fetch('http://localhost:3000/api/feed', { headers }),
+        fetch(`http://localhost:3000/api/feed?sort=${sort}`, { headers }),
         fetch('http://localhost:3000/api/posts', { headers }),
       ])
 
@@ -174,9 +215,29 @@ function Feed() {
     } finally {
       setLoading(false)
     }
-  }, [getToken])
+  }, [getToken, sort])
 
-    useEffect(() => {
+  async function handleToggleBookmark(pitchId) {
+    const token = await getToken()
+    if (!token) return
+    try {
+      const res = await fetch(`http://localhost:3000/api/feed/${pitchId}/bookmark`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) return
+      const { bookmarked } = await res.json()
+      setFeedItems((prev) =>
+        prev.map((item) =>
+          item.type === 'pitch' && item.id === pitchId ? { ...item, bookmarked } : item
+        )
+      )
+    } catch {
+      // Non-critical -- leave the UI as it was.
+    }
+  }
+
+  useEffect(() => {
     if (appUser) {
       ;(async () => {
         await loadFeed()
@@ -309,7 +370,6 @@ function Feed() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      {/* Left column */}
       <aside className="lg:col-span-3">
         <Card className="text-center">
           <div className="flex justify-center">
@@ -326,24 +386,35 @@ function Feed() {
         </Card>
       </aside>
 
-      {/* Middle column */}
       <main className="lg:col-span-6">
 
-        <div className="flex gap-6 border-b border-navy-800 mb-4 text-sm font-medium">
-          <span className="text-gold-500 border-b-2 border-gold-500 pb-3">
-            Dashboard
-          </span>
+        <div className="flex gap-6 border-b border-navy-800 mb-4 text-sm font-medium items-center justify-between">
+          <div className="flex gap-6">
+            <span className="text-gold-500 border-b-2 border-gold-500 pb-3">
+              Dashboard
+            </span>
 
-          <Link
-            to="/startup-school"
-            className="text-navy-400 hover:text-navy-100 pb-3"
+            <Link
+              to="/startup-school"
+              className="text-navy-400 hover:text-navy-100 pb-3"
+            >
+              Startup School
+            </Link>
+
+            <span className="text-navy-400 pb-3">
+              Messages
+            </span>
+          </div>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="bg-navy-950/60 border border-navy-700 rounded-lg px-2 py-1 text-xs text-navy-300 mb-2"
           >
-            Startup School
-          </Link>
-
-          <span className="text-navy-400 pb-3">
-            Messages
-          </span>
+            <option value="newest">Newest</option>
+            <option value="ask_amount_high">Highest Ask</option>
+            <option value="ask_amount_low">Lowest Ask</option>
+          </select>
         </div>
 
         <Card className="mb-4">
@@ -370,7 +441,7 @@ function Feed() {
         ) : (
           feedItems.map((item) =>
             item.type === 'pitch' ? (
-              <PitchFeedCard key={`pitch-${item.id}`} item={item} />
+              <PitchFeedCard key={`pitch-${item.id}`} item={item} onToggleBookmark={handleToggleBookmark} />
             ) : (
               <PostFeedCard
                 key={`post-${item.id}`}
@@ -386,7 +457,6 @@ function Feed() {
         )}
       </main>
 
-      {/* Right column */}
       <aside className="lg:col-span-3">
 
         <Card className="mb-4">

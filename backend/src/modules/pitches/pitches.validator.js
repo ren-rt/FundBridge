@@ -13,6 +13,7 @@ exports.createPitchValidator = [
   body('ask_amount').optional().isNumeric(),
   body('image_url').optional().isURL(),
   body('status').optional().isIn(['DRAFT', 'SUBMITTED']),
+  body('deck_url').optional({ checkFalsy: true }).isURL(),
 ];
 
 exports.updatePitchValidator = [
@@ -24,4 +25,5 @@ exports.updatePitchValidator = [
   body('ask_amount').optional().isNumeric(),
   body('image_url').optional().isURL(),
   body('status').optional().isIn(['DRAFT', 'SUBMITTED']),
+  body('deck_url').optional({ checkFalsy: true }).isURL(),
 ];

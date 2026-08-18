@@ -16,7 +16,8 @@ const MIGRATION_ORDER = [
   '011_social_feed.sql',
   '012_pitch_lifecycle.sql',
   '013_startup_school_quizzes.sql',
-  '014_live_sessions.sql'
+  '014_live_sessions.sql',
+  '015_bookmarks.sql'
 ];
 
 async function migrate() {
