@@ -3,10 +3,13 @@ const router = express.Router();
 const controller = require('./investors.controller');
 const { createInvestorValidator } = require('./investors.validator');
 const verifyJWT = require('../../middleware/jwt.middleware');
+const attachDbUser = require('../../middleware/attachDbUser');
 
-router.post('/', verifyJWT, createInvestorValidator, controller.create);
-router.get('/:id', verifyJWT, controller.get);
-router.get('/', verifyJWT, controller.list);
-router.put('/:id', verifyJWT, controller.update);
+router.use(verifyJWT, attachDbUser);
+
+router.post('/', createInvestorValidator, controller.create);
+router.get('/:id', controller.get);
+router.get('/', controller.list);
+router.put('/:id', controller.update);
 
 module.exports = router;
