@@ -10,6 +10,7 @@ import FounderProfile from './pages/FounderProfile'
 import InvestorProfile from './pages/InvestorProfile'
 
 import AdminVerification from './pages/AdminVerification'
+import AdminDashboard from './pages/AdminDashboard'
 import StartupSchool from './pages/StartupSchool'
 import StartupSchoolModule from './pages/StartupSchoolModule'
 import PitchSubmission from './pages/PitchSubmission'
