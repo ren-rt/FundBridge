@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Card from '../components/ui/Card'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
+
+const API_URL = 'http://localhost:3000/api/founders'
 
 const STAGE_OPTIONS = [
   { value: 'PRE_SEED', label: 'Pre-Seed' },
@@ -17,28 +19,128 @@ function FounderProfile() {
   const { getToken, appUser } = useAuth()
 
   const [form, setForm] = useState({
-    name: appUser?.full_name || '',
+    full_name: appUser?.full_name || '',
     company: '',
-    industry: '',
-    stage: '',
-    country: '',
     location: '',
     bio: '',
     skills: '',
+    stage: '',
     experience: '',
     linkedin: '',
     photo: '',
   })
 
+  const [profileId, setProfileId] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
+  useEffect(() => {
+    async function loadProfile() {
+      if (!appUser) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        setError('')
+
+        const token = await getToken()
+
+        if (!token) {
+          throw new Error(
+            'Authentication token not available. Please log in again.'
+          )
+        }
+
+        const res = await fetch(`${API_URL}/me`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (res.status === 404) {
+          setLoading(false)
+          return
+        }
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null)
+
+          throw new Error(
+            data?.error || 'Failed to load founder profile'
+          )
+        }
+
+        const profile = await res.json()
+
+        setProfileId(profile.id)
+
+        setForm({
+          full_name:
+            profile.full_name ||
+            appUser.full_name ||
+            '',
+
+          company:
+            profile.company ||
+            '',
+
+          location:
+            profile.country ||
+            '',
+
+          bio:
+            profile.description ||
+            '',
+
+          skills:
+            profile.industry ||
+            '',
+
+          stage:
+            profile.stage ||
+            '',
+
+          experience:
+            profile.experience ||
+            '',
+
+          linkedin:
+            profile.linkedin_url ||
+            '',
+
+          photo:
+            profile.photo_url ||
+            '',
+        })
+
+        localStorage.setItem(
+          'founderProfileComplete',
+          'true'
+        )
+      } catch (err) {
+        console.error('Founder profile load error:', err)
+
+        setError(
+          err.message || 'Could not load founder profile'
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProfile()
+  }, [appUser, getToken])
+
   function handleChange(field) {
     return (e) => {
-      setForm({
-        ...form,
+      setForm((prev) => ({
+        ...prev,
         [field]: e.target.value,
-      })
+      }))
+
       setSaved(false)
       setError('')
     }
@@ -49,18 +151,14 @@ function FounderProfile() {
 
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image file.')
-      return
-    }
-
     const reader = new FileReader()
 
     reader.onload = () => {
-      setForm({
-        ...form,
+      setForm((prev) => ({
+        ...prev,
         photo: reader.result,
-      })
+      }))
+
       setSaved(false)
       setError('')
     }
@@ -71,8 +169,8 @@ function FounderProfile() {
   async function handleSubmit(e) {
     e.preventDefault()
 
-    setSaved(false)
     setError('')
+    setSaved(false)
 
     try {
       const token = await getToken()
@@ -83,38 +181,87 @@ function FounderProfile() {
         )
       }
 
-      const res = await fetch(
-        'http://localhost:3000/api/founders',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            full_name: form.name,
-            company: form.company,
-            industry: form.industry,
-            stage: form.stage,
-            country: form.country,
-            region: form.location,
-            bio: form.bio,
-            skills: form.skills,
-            experience: form.experience,
-            linkedin_url: form.linkedin || null,
-            photo_url: form.photo || null,
-          }),
-        }
-      )
-
-      if (!res.ok) {
-        const message = await res.text()
-
+      if (!appUser?.id) {
         throw new Error(
-          message || 'Failed to save founder profile'
+          'User information is not available. Please log in again.'
         )
       }
 
+      const payload = {
+        user_id: appUser.id,
+
+        full_name: form.full_name,
+
+        company: form.company,
+
+        industry: form.skills,
+
+        stage: form.stage,
+
+        country: form.location,
+
+        region: form.location,
+
+        funding_amount: null,
+
+        description: form.bio,
+
+        experience: form.experience,
+
+        linkedin_url: form.linkedin || null,
+
+        photo_url: form.photo || null,
+      }
+
+      let res
+
+      if (profileId) {
+        // Existing profile → UPDATE
+        res = await fetch(
+          `${API_URL}/${profileId}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        )
+      } else {
+        // No profile yet → CREATE
+        res = await fetch(
+          API_URL,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+          }
+        )
+      }
+
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        const validationError =
+          data?.errors?.[0]?.msg
+
+        throw new Error(
+          data?.error ||
+          validationError ||
+          'Failed to save founder profile'
+        )
+      }
+
+      // Store the profile ID returned by backend
+      if (data?.id) {
+        setProfileId(data.id)
+      }
+
+      // Keep localStorage in sync
       localStorage.setItem(
         'founderProfile',
         JSON.stringify(form)
@@ -125,39 +272,58 @@ function FounderProfile() {
         'true'
       )
 
-      setSaved(true)
+      // Update the form with whatever backend returned
+      setForm({
+        full_name: data.full_name || '',
+        company: data.company || '',
+        location: data.country || '',
+        bio: data.description || '',
+        skills: data.industry || '',
+        stage: data.stage || '',
+        experience: data.experience || '',
+        linkedin: data.linkedin_url || '',
+        photo: data.photo_url || '',
+      })
 
+      setSaved(true)
     } catch (err) {
-      console.error(
-        'Founder profile save error:',
-        err
-      )
+      console.error('Founder profile save error:', err)
 
       setError(
-        err.message ||
-        'Could not save founder profile'
+        err.message || 'Could not save founder profile'
       )
     }
   }
 
   const requiredFields = [
-    form.name,
+    form.full_name,
     form.company,
-    form.industry,
-    form.stage,
-    form.country,
+    form.location,
     form.bio,
     form.skills,
+    form.stage,
     form.experience,
   ]
 
   const completedFields = requiredFields.filter(
-    (field) => field.trim() !== ''
+    (field) =>
+      typeof field === 'string' &&
+      field.trim() !== ''
   ).length
 
   const completion = Math.round(
     (completedFields / requiredFields.length) * 100
   )
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto">
+        <p className="text-navy-400">
+          Loading founder profile...
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -168,11 +334,11 @@ function FounderProfile() {
         </h1>
 
         <p className="text-navy-400 mt-2">
-          Tell investors who you are, what you are building,
-          and what you bring to the table.
+          Tell investors who you are and what you bring to the table.
         </p>
       </div>
 
+      {/* Profile Photo */}
       <Card className="mb-6">
 
         <div className="flex items-center gap-5">
@@ -186,8 +352,8 @@ function FounderProfile() {
           ) : (
             <div className="w-24 h-24 rounded-full bg-navy-700 border-2 border-navy-600 flex items-center justify-center">
               <span className="text-3xl text-gold-300">
-                {form.name
-                  ? form.name.charAt(0).toUpperCase()
+                {form.full_name
+                  ? form.full_name.charAt(0).toUpperCase()
                   : 'F'}
               </span>
             </div>
@@ -220,6 +386,7 @@ function FounderProfile() {
 
       </Card>
 
+      {/* Personal Information */}
       <Card>
 
         <form
@@ -229,91 +396,42 @@ function FounderProfile() {
 
           <div>
             <h2 className="text-lg font-semibold text-navy-100">
-              Founder & Startup Information
+              Personal Information
             </h2>
 
             <p className="text-sm text-navy-400 mt-1">
-              Give investors the basic information about you and your startup.
+              Complete your founder identity before moving on to Startup School.
             </p>
           </div>
 
+          {/* Full Name */}
           <Input
             label="Full name"
             placeholder="Your full name"
-            value={form.name}
-            onChange={handleChange('name')}
+            value={form.full_name}
+            onChange={handleChange('full_name')}
             required
           />
 
+          {/* Company Name */}
           <Input
-            label="Company name"
-            placeholder="FundBridge Inc."
+            label="Company / Startup name"
+            placeholder="Your startup name"
             value={form.company}
             onChange={handleChange('company')}
             required
           />
 
-          <div className="grid grid-cols-2 gap-4">
-
-            <Input
-              label="Industry"
-              placeholder="Fintech"
-              value={form.industry}
-              onChange={handleChange('industry')}
-              required
-            />
-
-            <Input
-              label="Country"
-              placeholder="Sri Lanka"
-              value={form.country}
-              onChange={handleChange('country')}
-              required
-            />
-
-          </div>
-
+          {/* Location */}
           <Input
-            label="Location / Region"
-            placeholder="Colombo"
+            label="Location"
+            placeholder="Colombo, Sri Lanka"
             value={form.location}
             onChange={handleChange('location')}
+            required
           />
 
-          <div className="flex flex-col gap-1.5 text-left">
-
-            <label className="text-sm font-medium text-navy-100">
-              Funding Stage
-            </label>
-
-            <div className="flex gap-2 flex-wrap">
-
-              {STAGE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setForm({
-                      ...form,
-                      stage: opt.value,
-                    })
-                    setSaved(false)
-                    setError('')
-                  }}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                    form.stage === opt.value
-                      ? 'bg-gold-500 text-navy-950'
-                      : 'bg-navy-950/60 border border-navy-700 text-navy-100'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-
-            </div>
-
-          </div>
-
+          {/* About */}
           <div className="flex flex-col gap-1.5 text-left">
 
             <label className="text-sm font-medium text-navy-100">
@@ -322,7 +440,7 @@ function FounderProfile() {
 
             <textarea
               rows={5}
-              placeholder="Tell investors about yourself, your background and what motivates you."
+              placeholder="Tell investors a little about yourself, your background and what motivates you."
               value={form.bio}
               onChange={handleChange('bio')}
               required
@@ -331,6 +449,7 @@ function FounderProfile() {
 
           </div>
 
+          {/* Skills */}
           <Input
             label="Skills"
             placeholder="Leadership, Product Design, Marketing, Python..."
@@ -339,6 +458,36 @@ function FounderProfile() {
             required
           />
 
+          {/* Startup Stage */}
+          <div className="flex flex-col gap-1.5 text-left">
+
+            <label className="text-sm font-medium text-navy-100">
+              Startup stage
+            </label>
+
+            <select
+              value={form.stage}
+              onChange={handleChange('stage')}
+              required
+              className="bg-navy-950/60 border border-navy-700 rounded-lg px-4 py-2.5 text-navy-100 focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20"
+            >
+              <option value="">
+                Select startup stage
+              </option>
+
+              {STAGE_OPTIONS.map((option) => (
+                <option
+                  key={option.value}
+                  value={option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
+          </div>
+
+          {/* Experience */}
           <div className="flex flex-col gap-1.5 text-left">
 
             <label className="text-sm font-medium text-navy-100">
@@ -356,6 +505,7 @@ function FounderProfile() {
 
           </div>
 
+          {/* LinkedIn */}
           <Input
             label="LinkedIn profile"
             placeholder="https://linkedin.com/in/yourname"
@@ -363,12 +513,14 @@ function FounderProfile() {
             onChange={handleChange('linkedin')}
           />
 
+          {/* Error */}
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm text-red-400">
               {error}
             </div>
           )}
 
+          {/* Completion */}
           <div className="border-t border-navy-800 pt-5">
 
             <div className="flex justify-between text-sm mb-2">
@@ -396,12 +548,14 @@ function FounderProfile() {
 
           </div>
 
+          {/* Success */}
           {saved && (
             <div className="bg-navy-800 border border-gold-500/30 rounded-lg px-4 py-3 text-sm text-gold-300">
-              Profile saved successfully. You can now continue to Startup School.
+              Profile saved successfully. Your changes have been saved.
             </div>
           )}
 
+          {/* Buttons */}
           <div className="flex justify-between items-center pt-2">
 
             <Button

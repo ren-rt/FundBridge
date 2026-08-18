@@ -4,11 +4,6 @@ exports.createFounder = async (data) => {
   const {
     user_id,
     full_name,
-    bio,
-    skills,
-    experience,
-    linkedin_url,
-    photo_url,
     company,
     industry,
     stage,
@@ -16,6 +11,9 @@ exports.createFounder = async (data) => {
     region,
     funding_amount,
     description,
+    experience,
+    linkedin_url,
+    photo_url,
   } = data;
 
   const result = await pool.query(
@@ -23,30 +21,35 @@ exports.createFounder = async (data) => {
       user_id,
       role,
       full_name,
-      bio,
-      skills,
-      experience,
-      linkedin_url,
-      photo_url,
       company,
       industry,
       stage,
       country,
       region,
       funding_amount,
-      description
+      description,
+      experience,
+      linkedin_url,
+      photo_url
     )
     VALUES (
-      $1, 'FOUNDER', $2, $3, $4, $5, $6, $7,
-      $8, $9, $10, $11, $12, $13, $14
+      $1,
+      'FOUNDER',
+      $2,
+      $3,
+      $4,
+      $5,
+      $6,
+      $7,
+      $8,
+      $9,
+      $10,
+      $11,
+      $12
     )
-    ON CONFLICT (user_id, role) DO UPDATE SET
+    ON CONFLICT (user_id, role)
+    DO UPDATE SET
       full_name = EXCLUDED.full_name,
-      bio = EXCLUDED.bio,
-      skills = EXCLUDED.skills,
-      experience = EXCLUDED.experience,
-      linkedin_url = EXCLUDED.linkedin_url,
-      photo_url = EXCLUDED.photo_url,
       company = EXCLUDED.company,
       industry = EXCLUDED.industry,
       stage = EXCLUDED.stage,
@@ -54,42 +57,59 @@ exports.createFounder = async (data) => {
       region = EXCLUDED.region,
       funding_amount = EXCLUDED.funding_amount,
       description = EXCLUDED.description,
-      updated_at = now()
+      experience = EXCLUDED.experience,
+      linkedin_url = EXCLUDED.linkedin_url,
+      photo_url = EXCLUDED.photo_url,
+      updated_at = NOW()
     RETURNING *`,
     [
       user_id,
       full_name,
-      bio,
-      skills,
+      company,
+      industry,
+      stage,
+      country,
+      region,
+      funding_amount || null,
+      description,
       experience,
       linkedin_url || null,
       photo_url || null,
-      company || null,
-      industry || null,
-      stage || null,
-      country || null,
-      region || null,
-      funding_amount || null,
-      description || null,
     ]
   );
 
   return result.rows[0];
 };
 
+exports.getFounderByUserId = async (userId) => {
+  const result = await pool.query(
+    `SELECT *
+     FROM profiles
+     WHERE user_id = $1
+       AND role = 'FOUNDER'
+     LIMIT 1`,
+    [userId]
+  );
+
+  return result.rows[0] || null;
+};
+
 exports.getFounder = async (id) => {
   const result = await pool.query(
-    `SELECT * FROM profiles
-     WHERE id = $1 AND role = 'FOUNDER'`,
+    `SELECT *
+     FROM profiles
+     WHERE id = $1
+       AND role = 'FOUNDER'`,
     [id]
   );
 
-  return result.rows[0];
+  return result.rows[0] || null;
 };
 
 exports.listFounders = async () => {
   const result = await pool.query(
-    `SELECT * FROM profiles
+    `SELECT *
+     FROM profiles
      WHERE role = 'FOUNDER'`
   );
 
@@ -99,11 +119,6 @@ exports.listFounders = async () => {
 exports.updateFounder = async (id, data) => {
   const {
     full_name,
-    bio,
-    skills,
-    experience,
-    linkedin_url,
-    photo_url,
     company,
     industry,
     stage,
@@ -111,45 +126,44 @@ exports.updateFounder = async (id, data) => {
     region,
     funding_amount,
     description,
+    experience,
+    linkedin_url,
+    photo_url,
   } = data;
 
   const result = await pool.query(
     `UPDATE profiles
      SET
        full_name = $1,
-       bio = $2,
-       skills = $3,
-       experience = $4,
-       linkedin_url = $5,
-       photo_url = $6,
-       company = $7,
-       industry = $8,
-       stage = $9,
-       country = $10,
-       region = $11,
-       funding_amount = $12,
-       description = $13,
-       updated_at = now()
-     WHERE id = $14
+       company = $2,
+       industry = $3,
+       stage = $4,
+       country = $5,
+       region = $6,
+       funding_amount = $7,
+       description = $8,
+       experience = $9,
+       linkedin_url = $10,
+       photo_url = $11,
+       updated_at = NOW()
+     WHERE id = $12
        AND role = 'FOUNDER'
      RETURNING *`,
     [
       full_name,
-      bio,
-      skills,
+      company,
+      industry,
+      stage,
+      country,
+      region,
+      funding_amount || null,
+      description,
       experience,
       linkedin_url || null,
       photo_url || null,
-      company || null,
-      industry || null,
-      stage || null,
-      country || null,
-      region || null,
-      funding_amount || null,
-      description || null,
       id,
     ]
   );
 
-  return result.rows[0];
+  return result.rows[0] || null;
 };
