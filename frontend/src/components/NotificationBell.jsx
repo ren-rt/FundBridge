@@ -48,9 +48,11 @@ function NotificationBell() {
     }
   }, [getToken])
 
-  useEffect(() => {
+    useEffect(() => {
     if (!appUser) return
-    fetchUnreadCount()
+    ;(async () => {
+      await fetchUnreadCount()
+    })()
     const interval = setInterval(fetchUnreadCount, 30000)
     return () => clearInterval(interval)
   }, [appUser, fetchUnreadCount])

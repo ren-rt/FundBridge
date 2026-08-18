@@ -17,6 +17,8 @@ router.get('/', controller.listAll);
 router.get('/mine', controller.listMine);
 router.get('/:id', pitchIdValidator, controller.getOne);
 router.patch('/:id', updatePitchValidator, controller.update);
+router.patch('/:id/archive', pitchIdValidator, controller.archive);
+router.get('/:id/analytics', pitchIdValidator, controller.analytics);
 router.delete('/:id', pitchIdValidator, controller.remove);
 
 module.exports = router;

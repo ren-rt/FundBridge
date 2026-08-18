@@ -28,6 +28,13 @@ function Layout() {
         </Link>
 
         <Link
+          to="/pitches/mine"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          My Pitches
+        </Link>
+
+        <Link
           to="/profile/founder"
           className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >

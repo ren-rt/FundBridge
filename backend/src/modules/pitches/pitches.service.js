@@ -1,4 +1,4 @@
-// backend/src/modules/pitches/pitches.service.js
+
 const pool = require('../../config/db');
 
 async function getFounderProfileId(userId) {
@@ -10,19 +10,23 @@ async function getFounderProfileId(userId) {
 }
 
 async function createPitch(profileId, data) {
-  const { title, summary, problem, solution, ask_amount, image_url } = data;
+  const { title, summary, problem, solution, ask_amount, image_url, status } = data;
   const { rows } = await pool.query(
-    `INSERT INTO pitches (profile_id, title, summary, problem, solution, ask_amount, image_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [profileId, title, summary, problem || null, solution || null, ask_amount || null, image_url || null]
+    `INSERT INTO pitches (profile_id, title, summary, problem, solution, ask_amount, image_url, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [profileId, title, summary, problem || null, solution || null, ask_amount || null, image_url || null, status || 'SUBMITTED']
   );
   return rows[0];
 }
 
+
 async function listAllPitches() {
-  const { rows } = await pool.query(`SELECT * FROM pitches ORDER BY created_at DESC`);
+  const { rows } = await pool.query(
+    `SELECT * FROM pitches WHERE status = 'SUBMITTED' ORDER BY created_at DESC`
+  );
   return rows;
 }
+
 
 async function listPitchesByProfile(profileId) {
   const { rows } = await pool.query(
@@ -37,15 +41,35 @@ async function getPitchById(id) {
   return rows[0] || null;
 }
 
+
+async function recordView(id) {
+  const { rows } = await pool.query(
+    `UPDATE pitches SET view_count = view_count + 1 WHERE id = $1 RETURNING view_count`,
+    [id]
+  );
+  return rows[0] ? rows[0].view_count : null;
+}
+
 async function updatePitch(id, data) {
-  const { title, summary, problem, solution, ask_amount, image_url } = data;
+  const { title, summary, problem, solution, ask_amount, image_url, status } = data;
   const { rows } = await pool.query(
     `UPDATE pitches
      SET title = $1, summary = $2, problem = $3, solution = $4,
-         ask_amount = $5, image_url = $6, updated_at = now()
-     WHERE id = $7
+         ask_amount = $5, image_url = $6,
+         status = COALESCE($7, status),
+         updated_at = now()
+     WHERE id = $8
      RETURNING *`,
-    [title, summary, problem || null, solution || null, ask_amount || null, image_url || null, id]
+    [title, summary, problem || null, solution || null, ask_amount || null, image_url || null, status || null, id]
+  );
+  return rows[0] || null;
+}
+
+
+async function archivePitch(id) {
+  const { rows } = await pool.query(
+    `UPDATE pitches SET status = 'ARCHIVED', updated_at = now() WHERE id = $1 RETURNING *`,
+    [id]
   );
   return rows[0] || null;
 }
@@ -61,6 +85,8 @@ module.exports = {
   listAllPitches,
   listPitchesByProfile,
   getPitchById,
+  recordView,
   updatePitch,
+  archivePitch,
   deletePitch,
 };

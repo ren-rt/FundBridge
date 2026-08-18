@@ -1,4 +1,4 @@
-// backend/src/modules/feed/feed.service.js
+
 const pool = require('../../config/db');
 
 async function getFeed(limit, offset) {
@@ -15,6 +15,7 @@ async function getFeed(limit, offset) {
        pr.country
      FROM pitches p
      JOIN profiles pr ON pr.id = p.profile_id
+     WHERE p.status = 'SUBMITTED'
      ORDER BY p.created_at DESC
      LIMIT $1 OFFSET $2`,
     [limit, offset]
