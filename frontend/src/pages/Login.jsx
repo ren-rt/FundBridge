@@ -1,4 +1,3 @@
-
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -33,6 +32,8 @@ function Login() {
         navigate('/founder-home', { replace: true })
       } else if (role === 'INVESTOR') {
         navigate('/investor-home', { replace: true })
+      } else if (role === 'ADMIN') {
+        navigate('/admin/dashboard', { replace: true })
       } else {
         setError(
           'Your account role could not be found. Please try logging in again.'
@@ -128,4 +129,3 @@ function Login() {
 }
 
 export default Login
-
