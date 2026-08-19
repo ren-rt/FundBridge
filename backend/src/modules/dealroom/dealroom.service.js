@@ -62,9 +62,12 @@ async function ensureDealRoom(founderProfileId, investorProfileId, actorUserId) 
   return rows[0];
 }
 
+
 // Is this user (internal users.id) the founder or investor on this room?
 // Admins are handled separately at the controller layer via requireAdmin,
 // not through this check.
+
+
 async function isParticipant(dealRoomId, userId) {
   const { rows } = await pool.query(
     `SELECT 1 FROM deal_rooms dr
@@ -74,6 +77,14 @@ async function isParticipant(dealRoomId, userId) {
   );
   return rows.length > 0;
 }
+
+
+
+async function isAdminOrParticipant(dealRoomId, userId, userRole) {
+  if (userRole === 'ADMIN') return true;
+  return isParticipant(dealRoomId, userId);
+}
+
 
 async function uploadDocument({ dealRoomId, uploadedByUserId, documentType, fileName, mimeType, buffer }) {
   const roomKey = deriveRoomKey(dealRoomId);

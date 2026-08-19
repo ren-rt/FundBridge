@@ -27,7 +27,10 @@ function MyPitches() {
       const res = await fetch('http://localhost:3000/api/pitches/mine', {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) throw new Error('Could not load your pitches')
+      if (!res.ok) {
+  const data = await res.json().catch(() => null)
+  throw new Error(data?.error || data?.message || 'Could not archive pitch')
+}
       setPitches(await res.json())
     } catch (err) {
       setError(err.message)
@@ -43,6 +46,7 @@ function MyPitches() {
   }, [loadPitches])
 
   async function handleArchive(pitchId) {
+    console.log('ARCHIVE URL:', `http://localhost:3000/api/pitches/${pitchId}/archive`)
     const token = await getToken()
     if (!token) return
 
@@ -51,7 +55,10 @@ function MyPitches() {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (!res.ok) throw new Error('Could not archive pitch')
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || data?.message || 'Could not archive pitch')
+      }
       const updated = await res.json()
       setPitches((prev) => prev.map((p) => (p.id === pitchId ? updated : p)))
     } catch (err) {
