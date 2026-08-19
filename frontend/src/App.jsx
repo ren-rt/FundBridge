@@ -165,6 +165,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/live-sessions"
+          element={
+            <ProtectedRoute>
+              <LiveSessions />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/messages"
