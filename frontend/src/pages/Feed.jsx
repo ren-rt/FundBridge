@@ -17,7 +17,7 @@ const LIVE_SESSIONS = [
   { name: 'Sharaka Inv.', sub: 'Techson' },
 ]
 
-function PitchFeedCard({ item, onToggleBookmark }) {
+function PitchFeedCard({ item, onToggleBookmark, onToggleInterest, isInvestor }) {
   const [deckOpen, setDeckOpen] = useState(false)
   const [deckError, setDeckError] = useState(false)
 
@@ -50,6 +50,17 @@ function PitchFeedCard({ item, onToggleBookmark }) {
         <p className="text-gold-300 text-sm mt-3 font-medium">
           Asking ${Number(item.ask_amount).toLocaleString()}
         </p>
+      )}
+
+      {isInvestor && (
+        <button
+          onClick={() => onToggleInterest(item.id)}
+          className={`mt-3 text-sm px-3 py-1.5 rounded-lg font-medium ${
+            item.interested ? 'bg-gold-500 text-navy-950' : 'bg-navy-800 text-navy-300 hover:bg-navy-700'
+          }`}
+        >
+          {item.interested ? '✓ Interested' : 'Express Interest'}
+        </button>
       )}
 
       {item.deck_url && (
@@ -237,6 +248,29 @@ function Feed() {
     }
   }
 
+  async function handleToggleInterest(pitchId) {
+    const token = await getToken()
+    if (!token) return
+    try {
+      const res = await fetch(`http://localhost:3000/api/pitches/${pitchId}/interest`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setError(data?.error || 'Could not express interest')
+        return
+      }
+      setFeedItems((prev) =>
+        prev.map((item) =>
+          item.type === 'pitch' && item.id === pitchId ? { ...item, interested: data.interested } : item
+        )
+      )
+    } catch {
+      // Non-critical -- leave the UI as it was.
+    }
+  }
+
   useEffect(() => {
     if (appUser) {
       ;(async () => {
@@ -401,9 +435,12 @@ function Feed() {
               Startup School
             </Link>
 
-            <span className="text-navy-400 pb-3">
+            <Link
+              to="/messages"
+              className="text-navy-400 hover:text-navy-100 pb-3"
+            >
               Messages
-            </span>
+            </Link>
           </div>
 
           <select
@@ -441,7 +478,13 @@ function Feed() {
         ) : (
           feedItems.map((item) =>
             item.type === 'pitch' ? (
-              <PitchFeedCard key={`pitch-${item.id}`} item={item} onToggleBookmark={handleToggleBookmark} />
+              <PitchFeedCard
+                key={`pitch-${item.id}`}
+                item={item}
+                onToggleBookmark={handleToggleBookmark}
+                onToggleInterest={handleToggleInterest}
+                isInvestor={appUser?.role === 'INVESTOR'}
+              />
             ) : (
               <PostFeedCard
                 key={`post-${item.id}`}

@@ -1,4 +1,4 @@
-
+// backend/src/modules/feed/feed.service.js
 const pool = require('../../config/db');
 
 const SORT_COLUMNS = {
@@ -28,9 +28,11 @@ async function getFeed(limit, offset, { sort, industry, stage, viewerUserId } = 
   const offsetIdx = params.length;
 
   let bookmarkSelect = 'FALSE AS bookmarked';
+  let interestSelect = 'FALSE AS interested';
   if (viewerUserId) {
     params.push(viewerUserId);
     bookmarkSelect = `EXISTS (SELECT 1 FROM pitch_bookmarks b WHERE b.pitch_id = p.id AND b.user_id = $${params.length}) AS bookmarked`;
+    interestSelect = `EXISTS (SELECT 1 FROM pitch_interests pi WHERE pi.pitch_id = p.id AND pi.investor_user_id = $${params.length}) AS interested`;
   }
 
   const { rows } = await pool.query(
@@ -38,7 +40,8 @@ async function getFeed(limit, offset, { sort, industry, stage, viewerUserId } = 
        p.id, p.title, p.summary, p.ask_amount, p.image_url, p.deck_url, p.created_at,
        COALESCE(pr.company, 'Untitled Pitch') AS company,
        pr.industry, pr.country, pr.stage,
-       ${bookmarkSelect}
+       ${bookmarkSelect},
+       ${interestSelect}
      FROM pitches p
      JOIN profiles pr ON pr.id = p.profile_id
      WHERE ${conditions.join(' AND ')}

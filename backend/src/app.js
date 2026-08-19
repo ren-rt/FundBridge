@@ -63,5 +63,8 @@ app.use('/api/admin/users', adminUsersRoutes);
 const adminOversightRoutes = require('./modules/adminOversight/adminOversight.routes');
 app.use('/api/admin', adminOversightRoutes);
 
+const messagingRoutes = require('./modules/messaging/messaging.routes');
+app.use('/api/messages', messagingRoutes);
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
