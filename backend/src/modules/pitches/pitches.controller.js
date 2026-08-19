@@ -138,3 +138,34 @@ exports.remove = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.toggleInterest = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const result = await service.toggleInterest(req.params.id, req.user.dbId);
+    if (!result) return res.status(404).json({ error: 'Pitch not found' });
+    res.json(result);
+  } catch (err) {
+    if (err.statusCode) return res.status(err.statusCode).json({ error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.listInterestedInvestors = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  try {
+    const pitch = await service.getPitchById(req.params.id);
+    if (!pitch) return res.status(404).json({ error: 'Not found' });
+
+    const profileId = await service.getFounderProfileId(req.user.dbId);
+    if (!profileId || profileId !== pitch.profile_id) {
+      return res.status(403).json({ error: 'You do not own this pitch' });
+    }
+
+    res.json(await service.listInterestedInvestors(req.params.id));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

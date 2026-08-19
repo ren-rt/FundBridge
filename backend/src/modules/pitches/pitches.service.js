@@ -1,4 +1,5 @@
 const pool = require('../../config/db');
+const { createNotification } = require('../notifications/notifications.service');
 
 async function getFounderProfileId(userId) {
   const { rows } = await pool.query(
@@ -97,6 +98,65 @@ async function deletePitch(id) {
   return rows[0] || null;
 }
 
+
+async function toggleInterest(pitchId, investorUserId) {
+  const verifiedResult = await pool.query(
+    `SELECT verification_status FROM profiles WHERE user_id = $1 AND role = 'INVESTOR'`,
+    [investorUserId]
+  );
+  if (!verifiedResult.rows[0]) {
+    const err = new Error('Only investors can express interest in a pitch');
+    err.statusCode = 403;
+    throw err;
+  }
+  if (verifiedResult.rows[0].verification_status !== 'VERIFIED') {
+    const err = new Error('Your investor profile must be admin-verified before expressing interest');
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const pitchResult = await pool.query(
+    `SELECT pi.*, p.user_id AS founder_user_id, COALESCE(p.company, 'Untitled Pitch') AS company
+     FROM pitches pi JOIN profiles p ON p.id = pi.profile_id WHERE pi.id = $1`,
+    [pitchId]
+  );
+  const pitch = pitchResult.rows[0];
+  if (!pitch) return null;
+
+  const existing = await pool.query(
+    `SELECT 1 FROM pitch_interests WHERE pitch_id = $1 AND investor_user_id = $2`,
+    [pitchId, investorUserId]
+  );
+
+  if (existing.rows[0]) {
+    await pool.query(`DELETE FROM pitch_interests WHERE pitch_id = $1 AND investor_user_id = $2`, [pitchId, investorUserId]);
+    return { interested: false };
+  }
+
+  await pool.query(`INSERT INTO pitch_interests (pitch_id, investor_user_id) VALUES ($1, $2)`, [pitchId, investorUserId]);
+
+  await createNotification(
+    pitch.founder_user_id,
+    `An investor expressed interest in "${pitch.title}".`,
+    'SYSTEM'
+  );
+
+  return { interested: true };
+}
+
+async function listInterestedInvestors(pitchId) {
+  const { rows } = await pool.query(
+    `SELECT pi.investor_user_id, pi.created_at, COALESCE(p.firm_name, u.email) AS investor_label
+     FROM pitch_interests pi
+     JOIN users u ON u.id = pi.investor_user_id
+     LEFT JOIN profiles p ON p.user_id = pi.investor_user_id AND p.role = 'INVESTOR'
+     WHERE pi.pitch_id = $1
+     ORDER BY pi.created_at DESC`,
+    [pitchId]
+  );
+  return rows;
+}
+
 module.exports = {
   getFounderProfileId,
   hasCompletedAllModules,
@@ -109,4 +169,6 @@ module.exports = {
   updatePitch,
   archivePitch,
   deletePitch,
+  toggleInterest,
+  listInterestedInvestors,
 };

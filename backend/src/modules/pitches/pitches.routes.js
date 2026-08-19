@@ -20,5 +20,7 @@ router.patch('/:id', updatePitchValidator, controller.update);
 router.patch('/:id/archive', pitchIdValidator, controller.archive);
 router.get('/:id/analytics', pitchIdValidator, controller.analytics);
 router.delete('/:id', pitchIdValidator, controller.remove);
+router.post('/:id/interest', pitchIdValidator, controller.toggleInterest);
+router.get('/:id/interested', pitchIdValidator, controller.listInterestedInvestors);
 
 module.exports = router;
