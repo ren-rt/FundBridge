@@ -19,7 +19,8 @@ const MIGRATION_ORDER = [
   '014_live_sessions.sql',
   '015_bookmarks.sql',
   '016_pitch_deck_and_match_logs.sql',
-  '017_admin_user_management.sql'
+  '017_admin_user_management.sql',
+  '018_messaging_and_interest.sql',
 ];
 
 async function migrate() {

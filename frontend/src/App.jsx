@@ -17,6 +17,7 @@ import PitchSubmission from './pages/PitchSubmission'
 import MyPitches from './pages/MyPitches'
 import Feed from './pages/Feed'
 import DealRooms from './pages/DealRooms'
+import Messages from './pages/Messages'
 import DealRoom from './pages/DealRoom'
 
 import LiveSessions from './pages/LiveSessions'
@@ -161,6 +162,15 @@ function App() {
           element={
             <ProtectedRoute>
               <DealRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Messages />
             </ProtectedRoute>
           }
         />

@@ -42,6 +42,20 @@ function Layout() {
         </Link>
 
         <Link
+          to="/messages"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          Messages
+        </Link>
+
+        <Link
+          to="/admin/dashboard"
+          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
+        >
+          Admin Dashboard
+        </Link>
+
+        <Link
           to="/profile/founder"
           className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
         >
@@ -62,13 +76,6 @@ function Layout() {
           Deal Rooms
         </Link>
       </aside>
-
-        <Link
-          to="/admin/dashboard"
-          className="px-3 py-2 rounded hover:bg-navy-800 hover:text-gold-300 transition-colors"
-        >
-          Admin Dashboard
-        </Link>
 
       <div className="flex-1 flex flex-col">
         <header className="bg-navy-900 border-b border-navy-800 px-6 py-4 flex justify-between items-center">
